@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS DF_SAAS_APP_INSTANCE
 (
    INSTANCE_ID        BIGINT NOT NULL AUTO_INCREMENT,
    APP_ID             BIGINT NOT NULL,
+   APP_VERSION        VARCHAR(64) NOT NULL,
    PROJECT            VARCHAR(120) NOT NULL,
    NAME               VARCHAR(255) NOT NULL,
    USER               VARCHAR(120) NOT NULL,
@@ -36,58 +37,72 @@ CREATE TABLE IF NOT EXISTS DF_SAAS_APP_INSTANCE
 
 Body Parameters:
 ```
-provider
-name
-version
-category
-description
+provider: 提供方
+name: 应用名称
+version: 当前应用版本
+category: 应用类别
+description: 应用描述
 ```
 
 Return Result (json):
 ```
-code:
-msg:
-data.id
+code: 返回码
+msg: 返回信息
+data.id: 应用id
 ```
 
 ### DELETE /saasappapi/v1/apps/{id}
 
 删除一个SaaS App。
 
+Path Parameters:
+```
+id: 应用id
+```
+
 Return Result (json):
 ```
-code:
-msg:
+code: 返回码
+msg: 返回信息
 ```
 
 ### PUT /saasappapi/v1/apps/{id}
 
 修改一个SaaS App。
 
+Path Parameters:
+```
+id: 应用id
+```
+
 Body Parameters:
 ```
-provider
-name
-version
-category
-description
+provider: 提供方
+name: 应用名称
+version: 当前应用版本
+category: 应用类别
+description: 应用描述
 ```
 
 Return Result (json):
 ```
-code:
-msg:
-data.id
+code: 返回码
+msg: 返回信息
 ```
 
 ### GET /saasappapi/v1/apps/{id}
 
 查询一个SaaS App。
 
+Path Parameters:
+```
+id: 应用id
+```
+
 Return Result (json):
 ```
-code:
-msg:
+code: 返回码
+msg: 返回信息
 data.id
 data.provider
 data.name
@@ -96,6 +111,7 @@ data.category
 data.description
 data.iconUrl
 data.createTime
+```
 
 ### GET /saasappapi/v1/apps?category={category}&orderby={orderby}&provider={provider}
 
@@ -110,8 +126,8 @@ provider: 提供方。可选。
 
 Return Result (json):
 ```
-code:
-msg:
+code: 返回码
+msg: 返回信息
 data.total
 data.results
 data.results[0].id
@@ -122,5 +138,6 @@ data.results[0].category
 data.results[0].description
 data.results[0].iconUrl
 data.results[0].createTime
+...
 ```
 
