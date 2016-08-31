@@ -8,17 +8,17 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"net"
+	//"net"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/miekg/dns"
+	//"github.com/miekg/dns"
 
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/asiainfoLDP/datahub_commons/common"
 	"github.com/asiainfoLDP/datahub_commons/log"
 	
-	"github.com/asiainfoLDP/datahub_stars/star"
+	"github.com/asiainfoLDP/datafoundry_appmarket/market"
 )
 
 //======================================================
@@ -27,12 +27,10 @@ import (
 
 const (
 	Platform_Local      = "local"
-	Platform_DaoCloud   = "daocloud"
-	Platform_DaoCloudUT = "daocloud_ut"
 	Platform_DataOS     = "dataos"
 )
 
-var Platform = Platform_DaoCloud
+var Platform = Platform_DataOS
 
 var Port int
 var Debug = false
@@ -41,10 +39,8 @@ var Logger = log.DefaultlLogger()
 func Init (router *httprouter.Router) bool {
 	Platform = os.Getenv("CLOUD_PLATFORM")
 	if Platform == "" {
-		Platform = Platform_DaoCloud
+		Platform = Platform_DataOS
 	}
-
-	initGateWay() // db upgrade may depend on this.
 
 	if initDB() == false {return false}
 
@@ -54,10 +50,10 @@ func Init (router *httprouter.Router) bool {
 }
 
 func initRouter(router *httprouter.Router) {
-	router.GET("/saasappapi/v1/apps", TimeoutHandle(500 * time.Millisecond, CreateApp))
+	router.POST("/saasappapi/v1/apps", TimeoutHandle(500 * time.Millisecond, CreateApp))
 	router.DELETE("/saasappapi/v1/apps/:id", TimeoutHandle(500 * time.Millisecond, DeleteApp))
 	router.PUT("/saasappapi/v1/apps/:id", TimeoutHandle(500 * time.Millisecond, ModifyApp))
-	router.GET("/saasappapi/v1/apps/:id", TimeoutHandle(500 * time.Millisecond, QueryApp))
+	router.GET("/saasappapi/v1/apps/:id", TimeoutHandle(500 * time.Millisecond, RetrieveApp))
 	router.GET("/saasappapi/v1/apps", TimeoutHandle(500 * time.Millisecond, QueryAppList))
 }
 
@@ -65,123 +61,28 @@ func initRouter(router *httprouter.Router) {
 //
 //=============================
 
-func consulAddrPort() (string, string) {
-	return os.Getenv("CONSUL_SERVER"), os.Getenv("CONSUL_DNS_PORT")
-}
-
-func dnsExchange(srvName string) []*dnsEntry {
-	fiilSrvName := fmt.Sprintf("%s.service.consul", srvName)
-	agentAddr := net.JoinHostPort(consulAddrPort())
-	Logger.Debugf("DNS query %s @ %s", fiilSrvName, agentAddr)
-
-	m := new(dns.Msg)
-	m.SetQuestion(dns.Fqdn(fiilSrvName), dns.TypeSRV)
-	m.RecursionDesired = true
-
-	c := &dns.Client{Net: "tcp"}
-	r, _, err := c.Exchange(m, agentAddr)
-	if err != nil {
-		log.DefaultLogger().Warningf("dns query error: %s", err.Error())
-		return nil
-	}
-	if r.Rcode != dns.RcodeSuccess {
-		log.DefaultLogger().Warningf("dns query error: %v", r.Rcode)
-		return nil
-	}
-	
-	/*
-	entries := make([]*dnsEntry, 0, 16)
-	for i := len(r.Answer) - 1; i >= 0; i-- {
-		answer := r.Answer[i]
-		log.DefaultLogger().Debugf("r.Answer[%d]=%s", i, answer.String())
-		
-		srv, ok := answer.(*dns.SRV)
-		if ok {
-			m.SetQuestion(dns.Fqdn(srv.Target), dns.TypeA)
-			r1, _, err := c.Exchange(m, agentAddr)
-			if err != nil {
-				log.DefaultLogger().Warningf("dns query error: %s", err.Error())
-				continue
-			}
-			
-			for j := len(r1.Answer) - 1; j >= 0; j-- {
-				answer1 := r1.Answer[j]
-				log.DefaultLogger().Debugf("r1.Answer[%d]=%v", i, answer1)
-				
-				a, ok := answer1.(*dns.A)
-				if ok {
-					a.A is the node ip instead of service ip
-					entries = append(entries,  &dnsEntry{ip: a.A.String(), port: fmt.Sprintf("%d", srv.Port)})
-				} 
-			}
-		}
-	}
-	
-	return entries
-	*/
-	
-	if len(r.Extra) != len(r.Answer) {
-		log.DefaultLogger().Warningf("len(r.Extra)(%d) != len(r.Answer)(%d)", len(r.Extra), len(r.Answer))
-		return nil
-	}
-	
-	num := len(r.Extra)
-	entries := make([]*dnsEntry, num)
-	index := 0
-	for i := 0; i < num; i ++ {
-		//log.DefaultLogger().Debugf("r.Extra[%d]=%s", i, r.Extra[i].String())
-		//log.DefaultLogger().Debugf("r.Answer[%d]=%s", i, r.Answer[i].String())
-		a, oka := r.Extra[i].(*dns.A)
-		s, oks := r.Answer[i].(*dns.SRV)
-		if oka && oks {
-			entries[index] = &dnsEntry{ip: a.A.String(), port: fmt.Sprintf("%d", s.Port)}
-			index ++
-		}
-	}
-
-	return entries[:index]
-	
-}
-
-type dnsEntry struct {
-	ip   string
-	port string
-}
-
-//=============================
-//
-//=============================
-
 func MysqlAddrPort() (string, string) {
-	switch Platform {
-	case Platform_DaoCloud:
-		entryList := dnsExchange(os.Getenv("mysql_service_name"))
-
-		if len(entryList) > 0 {
-			return entryList[0].ip, entryList[0].port
-		}
-	case Platform_DataOS:
+	//switch Platform {
+	//case Platform_DataOS:
 		return os.Getenv(os.Getenv("ENV_NAME_MYSQL_ADDR")), os.Getenv(os.Getenv("ENV_NAME_MYSQL_PORT"))
-	case Platform_DaoCloudUT:
-		fallthrough
-	case Platform_Local:
-		return os.Getenv("MYSQL_PORT_3306_TCP_ADDR"), os.Getenv("MYSQL_PORT_3306_TCP_PORT")
-	}
-	
-	return "", ""
+	//case Platform_Local:
+	//	return os.Getenv("MYSQL_PORT_3306_TCP_ADDR"), os.Getenv("MYSQL_PORT_3306_TCP_PORT")
+	//}
+	//
+	//return "", ""
 }
 
 func MysqlDatabaseUsernamePassword() (string, string, string) {
-	switch Platform {
-	case Platform_DataOS:
+	//switch Platform {
+	//case Platform_DataOS:
 		return os.Getenv(os.Getenv("ENV_NAME_MYSQL_DATABASE")), 
 			os.Getenv(os.Getenv("ENV_NAME_MYSQL_USER")), 
 			os.Getenv(os.Getenv("ENV_NAME_MYSQL_PASSWORD"))
-	}
-	
-	return os.Getenv("MYSQL_ENV_MYSQL_DATABASE"), 
-		os.Getenv("MYSQL_ENV_MYSQL_USER"), 
-		os.Getenv("MYSQL_ENV_MYSQL_PASSWORD")
+	//}
+	//
+	//return os.Getenv("MYSQL_ENV_MYSQL_DATABASE"), 
+	//	os.Getenv("MYSQL_ENV_MYSQL_USER"), 
+	//	os.Getenv("MYSQL_ENV_MYSQL_PASSWORD")
 }
 
 type Ds struct {
@@ -193,7 +94,7 @@ var (
 )
 
 func getDB() *sql.DB {
-	if star.IsServing() {
+	if market.IsServing() {
 		return ds.db
 	} else {
 		return nil
@@ -258,95 +159,10 @@ func connectDB() {
 }
 
 func upgradeDB() {
-	// here "datahub:subs_txns" is a mistake.
-	// but don't change it.
-	err := star.TryToUpgradeDatabase(ds.db, "datahub:subs_txns", os.Getenv("MYSQL_CONFIG_DONT_UPGRADE_TABLES") != "yes") // don't change the name
+	err := market.TryToUpgradeDatabase(ds.db, "datafoundry:appmarket", os.Getenv("MYSQL_CONFIG_DONT_UPGRADE_TABLES") != "yes") // don't change the name
 	if err != nil {
 		Logger.Errorf("TryToUpgradeDatabase error: %s", err.Error())
 	}
-}
-
-var (
-	ApiGateway string
-	
-	RepositoryService   string
-	SubscriptionSercice string
-	UserService         string
-	BillService         string
-	DeamonService       string
-)
-
-func BuildServiceUrlPrefixFromEnv(name string, addrEnv string, portEnv string) string {
-	addr := os.Getenv(addrEnv)
-	if addr == "" {
-		Logger.Errorf("%s env should not be null", addrEnv)
-	}
-	port := os.Getenv(portEnv)
-
-	prefix := ""
-	if port == "" {
-		prefix = fmt.Sprintf("http://%s", addr)
-	} else {
-		prefix = fmt.Sprintf("http://%s:%s", addr, port)
-	}
-
-	Logger.Infof("%s = %s", name, prefix)
-	
-	return prefix
-}
-
-
-func initGateWay() {
-	switch Platform {
-	default:
-		ApiGateway = BuildServiceUrlPrefixFromEnv("ApiGateway", "API_SERVER", "API_PORT")
-	case Platform_DataOS:
-		RepositoryService = BuildServiceUrlPrefixFromEnv("RepositoryService", "REPOSIROTY_SERVICE_API_SERVER", "REPOSIROTY_SERVICE_API_PORT")
-		SubscriptionSercice = BuildServiceUrlPrefixFromEnv("SubscriptionSercice", "SUBSCRIPTION_SERVICE_API_SERVER", "SUBSCRIPTION_SERVICE_API_PORT")
-		UserService = BuildServiceUrlPrefixFromEnv("UserService", "USER_SERVICE_API_SERVER", "USER_SERVICE_API_PORT")
-		BillService = BuildServiceUrlPrefixFromEnv("BillService", "BILL_SERVICE_API_SERVER", "BILL_SERVICE_API_PORT")
-		DeamonService = BuildServiceUrlPrefixFromEnv("DeamonService", "DEAMON_SERVICE_API_SERVER", "DEAMON_SERVICE_API_PORT")
-	}
-}
-
-func getRepositoryService() string {
-	if RepositoryService != "" {
-		return RepositoryService
-	}
-	
-	return ApiGateway
-}
-
-func getSubscriptionSercice() string {
-	if SubscriptionSercice != "" {
-		return SubscriptionSercice
-	}
-	
-	return ApiGateway
-}
-
-func getUserService() string {
-	if UserService != "" {
-		return UserService
-	}
-	
-	return ApiGateway
-}
-
-func getBillService() string {
-	if BillService != "" {
-		return BillService
-	}
-	
-	return ApiGateway
-}
-
-func getDeamonService() string {
-	if DeamonService != "" {
-		return DeamonService
-	}
-	
-	return ApiGateway
 }
 
 //======================================================
@@ -354,8 +170,6 @@ func getDeamonService() string {
 //======================================================
 
 const (
-	Token_TTL = time.Duration(72) * time.Hour
-
 	StringParamType_General        = 0
 	StringParamType_UrlWord        = 1
 	StringParamType_UnicodeUrlWord = 2

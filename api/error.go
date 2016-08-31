@@ -21,47 +21,42 @@ const (
 	
 	ErrorCodeNone = 0
 
-	ErrorCodeUnkown                = 5300
-	ErrorCodeJsonBuilding          = 5301
-	ErrorCodeUrlNotSupported       = 5302
-	ErrorCodeDbNotInitlized        = 5303
-	ErrorCodeAuthFailed            = 5304
-	ErrorCodePermissionDenied      = 5305
-	ErrorCodeInvalidParameters     = 5306
-	ErrorCodeGetDataItem           = 5307
-	ErrorCodeCreateMarket            = 5308
-	ErrorCodeGetMarket               = 5309
-	ErrorCodeCancelMarket            = 5310
-	ErrorCodeQueryMarket             = 5311
-	ErrorCodeGetStatistics         = 5312
-	ErrorCodeParseJsonFailed       = 5313
-	ErrorCodeFailedToConnectRemote = 5314
-	ErrorCodeNotOkRemoteResponse   = 5315
-	ErrorCodeInvalidRemoteResponse = 5316
+	ErrorCodeUnkown                = 1300
+	ErrorCodeJsonBuilding          = 1301
+	ErrorCodeParseJsonFailed       = 1302
+	ErrorCodeUrlNotSupported       = 1303
+	ErrorCodeDbNotInitlized        = 1304
+	ErrorCodeAuthFailed            = 1305
+	ErrorCodePermissionDenied      = 1306
+	ErrorCodeInvalidParameters     = 1307
+	ErrorCodeCreateApp             = 1308
+	ErrorCodeDeleteApp             = 1309
+	ErrorCodeModifyApp             = 1310
+	ErrorCodeGetApp                = 1311
+	ErrorCodeQueryApps             = 1312
 
-	NumErrors = 5999 // about 50k memroy wasted
+
+
+	NumErrors = 1500 // about 12k memroy wasted
 )
 
 func init() {
 	initError(ErrorCodeNone, "OK")
 	initError(ErrorCodeUnkown, "unknown error")
 	initError(ErrorCodeJsonBuilding, "json building error")
+	initError(ErrorCodeParseJsonFailed, "parse json failed")
 
 	initError(ErrorCodeUrlNotSupported, "unsupported url")
 	initError(ErrorCodeDbNotInitlized, "db is not inited")
 	initError(ErrorCodeAuthFailed, "auth failed")
 	initError(ErrorCodePermissionDenied, "permission denied")
 	initError(ErrorCodeInvalidParameters, "invalid parameters")
-	initError(ErrorCodeGetDataItem, "failed to get data item")
-	initError(ErrorCodeCreateMarket, "failed to create star")
-	initError(ErrorCodeGetMarket, "failed to get star")
-	initError(ErrorCodeCancelMarket, "failed to cancel star")
-	initError(ErrorCodeQueryMarket, "failed to  query stars")
-	initError(ErrorCodeGetStatistics, "failed to get statistics")
-	initError(ErrorCodeParseJsonFailed, "parse json failed")
-	initError(ErrorCodeFailedToConnectRemote, "failed to connect remote")
-	initError(ErrorCodeNotOkRemoteResponse, "remote response is not ok")
-	initError(ErrorCodeInvalidRemoteResponse, "remote response error")
+
+	initError(ErrorCodeCreateApp, "failed to create app")
+	initError(ErrorCodeDeleteApp, "failed to delete app")
+	initError(ErrorCodeModifyApp, "failed to modify app")
+	initError(ErrorCodeGetApp, "failed to retrieve app")
+	initError(ErrorCodeQueryApps, "failed to query apps")
 
 	ErrorNone = GetError(ErrorCodeNone)
 	ErrorUnkown = GetError(ErrorCodeUnkown)

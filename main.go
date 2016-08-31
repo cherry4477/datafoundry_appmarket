@@ -15,7 +15,7 @@ import (
 )
 
 var debug = flag.Bool("debug", false, "is debug mode?")
-var port = flag.Int("port", 8877, "server port")
+var port = flag.Int("port", 8000, "server port")
 
 func init() {
 	flag.Parse()
@@ -100,7 +100,7 @@ func NewRouter() *httprouter.Router {
 func main() {
 	router := NewRouter()
 
-	// star
+	// market
 
 	if api.Init(router) == false {
 		log.DefaultlLogger().Fatal("failed to initdb")

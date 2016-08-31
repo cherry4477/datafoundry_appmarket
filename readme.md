@@ -141,3 +141,24 @@ data.results[0].createTime
 ...
 ```
 
+## 部署
+
+oc new-instance datafoundryappmarket-mysql --name=Mysql --planid=NoCase
+
+oc new-app --name datafoundryappmarket https://github.com/asiainfoLDP/datafoundry_appmarket.git#master \
+    -e  CLOUD_PLATFORM="dataos" \
+    \
+    -e  ENV_NAME_MYSQL_ADDR="BSI_DATAFOUNDRYAPPMARKETMYSQL_HOST" \
+    -e  ENV_NAME_MYSQL_PORT="BSI_DATAFOUNDRYAPPMARKETMYSQL_PORT" \
+    -e  ENV_NAME_MYSQL_DATABASE="BSI_DATAFOUNDRYAPPMARKETMYSQL_NAME" \
+    -e  ENV_NAME_MYSQL_USER="BSI_DATAFOUNDRYAPPMARKETMYSQL_USERNAME" \
+    -e  ENV_NAME_MYSQL_PASSWORD="BSI_DATAFOUNDRYAPPMARKETMYSQL_PASSWORD" \
+    \
+    -e  MYSQL_CONFIG_DONT_UPGRADE_TABLES="false" \
+    -e  LOG_LEVEL="debug"
+
+oc bind datafoundryappmarket-mysql datafoundryappmarket-mysql
+
+oc start-build datafoundryappmarket
+
+
