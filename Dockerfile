@@ -11,4 +11,4 @@ WORKDIR /go/src/github.com/asiainfoLDP/datafoundry_appmarket
 
 RUN go build
 
-CMD ["sh", "-c", "./datahub_appmarket -port=8000"]
+CMD ["sh", "-c", "./datafoundry_appmarket -port=8000"]
