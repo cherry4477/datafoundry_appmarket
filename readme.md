@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS DF_SAAS_APP
    APP_ID             BIGINT NOT NULL AUTO_INCREMENT,
    PROVIDER           VARCHAR(120) NOT NULL,
    NAME               VARCHAR(255) NOT NULL,
+   URL                VARCHAR(255) NOT NULL,
    VERSION            VARCHAR(64) NOT NULL,
    CATEGORY           VARCHAR(64),
    DESCRIPTION        TEXT,
@@ -14,18 +15,6 @@ CREATE TABLE IF NOT EXISTS DF_SAAS_APP
    CREATE_TIME        DATETIME,
    HOTNESS            INT NOT NULL,
    PRIMARY KEY (APP_ID)
-)  DEFAULT CHARSET=UTF8;
-
-CREATE TABLE IF NOT EXISTS DF_SAAS_APP_INSTANCE
-(
-   INSTANCE_ID        BIGINT NOT NULL AUTO_INCREMENT,
-   APP_ID             BIGINT NOT NULL,
-   APP_VERSION        VARCHAR(64) NOT NULL,
-   PROJECT            VARCHAR(120) NOT NULL,
-   NAME               VARCHAR(255) NOT NULL,
-   USER               VARCHAR(120) NOT NULL,
-   CREATE_TIME        DATETIME,
-   PRIMARY KEY (INSTANCE_ID)
 )  DEFAULT CHARSET=UTF8;
 ```
 
@@ -38,6 +27,7 @@ CREATE TABLE IF NOT EXISTS DF_SAAS_APP_INSTANCE
 Body Parameters:
 ```
 provider: 提供方
+url: 应用地址
 name: 应用名称
 version: 当前应用版本
 category: 应用类别
@@ -78,6 +68,7 @@ id: 应用id
 Body Parameters:
 ```
 provider: 提供方
+url: 应用地址
 name: 应用名称
 version: 当前应用版本
 category: 应用类别
@@ -105,6 +96,7 @@ code: 返回码
 msg: 返回信息
 data.id
 data.provider
+data.url
 data.name
 data.version
 data.category
@@ -132,6 +124,7 @@ data.total
 data.results
 data.results[0].id
 data.results[0].provider
+data.results[0].url
 data.results[0].name
 data.results[0].version
 data.results[0].category
@@ -143,18 +136,19 @@ data.results[0].createTime
 
 ## 部署
 
+```
 oc new-instance MysqlForAppMarket --service=Mysql --plan=NoCase
 
 oc new-app --name datafoundryappmarket https://github.com/asiainfoLDP/datafoundry_appmarket.git#develop \
     -e  CLOUD_PLATFORM="dataos" \
     \
-    -e  DATAFOUNDRY_HOST_ADDR="192.168.12.5:8443" \
+    -e  DATAFOUNDRY_HOST_ADDR="xxx" \
     \
-    -e  ENV_NAME_MYSQL_ADDR="BSI_DATAFOUNDRYAPPMARKETMYSQL_HOST" \
-    -e  ENV_NAME_MYSQL_PORT="BSI_DATAFOUNDRYAPPMARKETMYSQL_PORT" \
-    -e  ENV_NAME_MYSQL_DATABASE="BSI_DATAFOUNDRYAPPMARKETMYSQL_NAME" \
-    -e  ENV_NAME_MYSQL_USER="BSI_DATAFOUNDRYAPPMARKETMYSQL_USERNAME" \
-    -e  ENV_NAME_MYSQL_PASSWORD="BSI_DATAFOUNDRYAPPMARKETMYSQL_PASSWORD" \
+    -e  ENV_NAME_MYSQL_ADDR="BSI_MYSQL_MYSQLFORAPPMARKET_HOST" \
+    -e  ENV_NAME_MYSQL_PORT="BSI_MYSQL_MYSQLFORAPPMARKET_PORT" \
+    -e  ENV_NAME_MYSQL_DATABASE="BSI_MYSQL_MYSQLFORAPPMARKET_NAME" \
+    -e  ENV_NAME_MYSQL_USER="BSI_MYSQL_MYSQLFORAPPMARKET_USERNAME" \
+    -e  ENV_NAME_MYSQL_PASSWORD="BSI_MYSQL_MYSQLFORAPPMARKET_PASSWORD" \
     \
     -e  MYSQL_CONFIG_DONT_UPGRADE_TABLES="false" \
     -e  LOG_LEVEL="debug"
@@ -165,4 +159,4 @@ oc expose service datafoundryappmarket --hostname=datafoundry-appmarket.app.data
 
 oc start-build datafoundryappmarket
 
-
+```

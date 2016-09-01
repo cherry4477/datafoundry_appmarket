@@ -140,9 +140,6 @@ func updateDB() {
 }
 
 func connectDB() {
-	Logger.Debug("=========os.Getenv(ENV_NAME_MYSQL_ADDR) = ", os.Getenv("ENV_NAME_MYSQL_ADDR"))
-	Logger.Debug("=========os.Getenv(os.Getenv(ENV_NAME_MYSQL_ADDR))", os.Getenv(os.Getenv("ENV_NAME_MYSQL_ADDR")))
-
 	DB_ADDR, DB_PORT := MysqlAddrPort()
 	DB_DATABASE, DB_USER, DB_PASSWORD := MysqlDatabaseUsernamePassword()
 	
