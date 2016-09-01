@@ -7,7 +7,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	//"github.com/asiainfoLDP/datahub_commons/common"
-	
+
 	"github.com/asiainfoLDP/datafoundry_appmarket/market"
 )
 
@@ -27,8 +27,8 @@ func DeleteApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 }
 
 func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	app := &market.SaasApp {
-		App_id:      123,
+	app := &market.SaasApp{
+		App_id:      "123",
 		Provider:    "ABCD ltd.",
 		Url:         "/",
 		Name:        "Quick mail",
@@ -43,8 +43,9 @@ func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 }
 
 func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	app := &market.SaasApp {
-		App_id:      123,
+	appid := params.ByName("appid")
+	app := &market.SaasApp{
+		App_id:      appid,
 		Provider:    "ABCD ltd.",
 		Url:         "/",
 		Name:        "Quick mail",
@@ -59,11 +60,11 @@ func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Param
 }
 
 func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	apps := []*market.SaasApp {
-		&market.SaasApp {
-			App_id:      123,
+	apps := []*market.SaasApp{
+		{
+			App_id:      "123",
 			Provider:    "ABCD ltd.",
-			Url:         "/",
+			Url:         "123",
 			Name:        "Quick mail",
 			Version:     "1.0.0",
 			Category:    "email",
@@ -71,10 +72,10 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 			Icon_url:    "/components/header/img/logo.png",
 			Create_time: time.Now(),
 		},
-		&market.SaasApp {
-			App_id:      789,
+		{
+			App_id:      "789",
 			Provider:    "WXYZ ltd.",
-			Url:         "/",
+			Url:         "789",
 			Name:        "net disk",
 			Version:     "2.0.0",
 			Category:    "storage",
