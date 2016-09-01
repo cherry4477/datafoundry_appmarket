@@ -143,10 +143,12 @@ data.results[0].createTime
 
 ## 部署
 
-oc new-instance datafoundryappmarket-mysql --name=Mysql --planid=NoCase
+oc new-instance MysqlForAppMarket --service=Mysql --plan=NoCase
 
-oc new-app --name datafoundryappmarket https://github.com/asiainfoLDP/datafoundry_appmarket.git#master \
+oc new-app --name datafoundryappmarket https://github.com/asiainfoLDP/datafoundry_appmarket.git#develop \
     -e  CLOUD_PLATFORM="dataos" \
+    \
+    -e  DATAFOUNDRY_HOST_ADDR="192.168.12.5:8443" \
     \
     -e  ENV_NAME_MYSQL_ADDR="BSI_DATAFOUNDRYAPPMARKETMYSQL_HOST" \
     -e  ENV_NAME_MYSQL_PORT="BSI_DATAFOUNDRYAPPMARKETMYSQL_PORT" \
@@ -157,7 +159,9 @@ oc new-app --name datafoundryappmarket https://github.com/asiainfoLDP/datafoundr
     -e  MYSQL_CONFIG_DONT_UPGRADE_TABLES="false" \
     -e  LOG_LEVEL="debug"
 
-oc bind datafoundryappmarket-mysql datafoundryappmarket-mysql
+oc bind MysqlForAppMarket datafoundryappmarket
+
+oc expose service datafoundryappmarket --hostname=datafoundry-appmarket.app.dataos.io
 
 oc start-build datafoundryappmarket
 
