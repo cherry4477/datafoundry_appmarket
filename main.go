@@ -10,8 +10,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/asiainfoLDP/datafoundry_appmarket/api"
-	"github.com/asiainfoLDP/datahub_commons/log"
 	"github.com/asiainfoLDP/datahub_commons/httputil"
+	"github.com/asiainfoLDP/datahub_commons/log"
 )
 
 var debug = flag.Bool("debug", false, "is debug mode?")
@@ -20,17 +20,17 @@ var port = flag.Int("port", 8000, "server port")
 func init() {
 	flag.Parse()
 	api.Debug = *debug
-	
-	log_level := log.LevelString2Int (os.Getenv("LOG_LEVEL"))
-	
+
+	log_level := log.LevelString2Int(os.Getenv("LOG_LEVEL"))
+
 	if log_level >= 0 {
-		log.SetDefaultLoggerLevel (log_level)
+		log.SetDefaultLoggerLevel(log_level)
 	} else if *debug {
-		log.SetDefaultLoggerLevel (log.LevelDebug)
+		log.SetDefaultLoggerLevel(log.LevelDebug)
 	} else {
-		log.SetDefaultLoggerLevel (log.LevelInfo)
+		log.SetDefaultLoggerLevel(log.LevelInfo)
 	}
-	
+
 	log_name := fmt.Sprintf("%s-%s", os.Getenv("SERVICE_NAME"), os.Getenv("HOSTNAME"))
 	log.SetDefaultLoggerName(log_name)
 }
@@ -82,14 +82,15 @@ func NewRouter() *httprouter.Router {
 	router.RedirectTrailingSlash = false
 	router.RedirectFixedPath = false
 
-	router.POST("/", handler_Index)
-	router.DELETE("/", handler_Index)
-	router.GET("/", handler_Index)
-	router.PUT("/", handler_Index)
+	router.POST("/saas/v1/apps", api.CreateApp)
+	router.DELETE("/saas/v1/apps/:appid", api.DeleteApp)
+	router.GET("/saas/v1/apps/:appid", api.RetrieveApp)
+	router.GET("/saas/v1/apps", api.QueryAppList)
+	router.PUT("/saas/v1/apps/:appid", api.ModifyApp)
 	router.NotFound = &HttpHandler{httpNotFound}
 	router.MethodNotAllowed = &HttpHandler{httpNotFound}
 	//router.Handler ("GET", "/static", http.StripPrefix ("/static/", http.FileServer (http.Dir ("public"))))
-	
+
 	return router
 }
 
@@ -105,11 +106,11 @@ func main() {
 	if api.Init(router) == false {
 		log.DefaultlLogger().Fatal("failed to initdb")
 	}
-	
+
 	// ...
-	
+
 	service := newService(*port)
 	address := fmt.Sprintf(":%d", service.httpPort)
 	log.DefaultlLogger().Infof("Listening http at: %s\n", address)
-	log.DefaultlLogger().Fatal(http.ListenAndServe(address, httputil.TimeoutHandler(router, 250 * time.Millisecond, ""))) // will block here
+	log.DefaultlLogger().Fatal(http.ListenAndServe(address, httputil.TimeoutHandler(router, 250*time.Millisecond, ""))) // will block here
 }

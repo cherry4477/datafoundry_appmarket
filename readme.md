@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS DF_SAAS_APP
 
 ## API设计
 
-### POST /saasappapi/v1/apps
+### POST /saas/v1/apps
 
 创建一个SaaS App。
 
@@ -41,7 +41,7 @@ msg: 返回信息
 data.id: 应用id
 ```
 
-### DELETE /saasappapi/v1/apps/{id}
+### DELETE /saas/v1/apps/{id}
 
 删除一个SaaS App。
 
@@ -56,7 +56,7 @@ code: 返回码
 msg: 返回信息
 ```
 
-### PUT /saasappapi/v1/apps/{id}
+### PUT /saas/v1/apps/{id}
 
 修改一个SaaS App。
 
@@ -81,7 +81,7 @@ code: 返回码
 msg: 返回信息
 ```
 
-### GET /saasappapi/v1/apps/{id}
+### GET /saas/v1/apps/{id}
 
 查询一个SaaS App。
 
@@ -105,7 +105,7 @@ data.iconUrl
 data.createTime
 ```
 
-### GET /saasappapi/v1/apps?category={category}&orderby={orderby}&provider={provider}
+### GET /saas/v1/apps?category={category}&orderby={orderby}&provider={provider}
 
 查询SaaS App列表。
 

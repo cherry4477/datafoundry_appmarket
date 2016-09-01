@@ -9,7 +9,6 @@ import (
 	//"strings"
 	//"io/ioutil"
 	//"path/filepath"s
-
 	//stat "github.com/asiainfoLDP/datafoundry_appmarket/statistics"
 	//"github.com/asiainfoLDP/datahub_commons/log"
 )
@@ -32,7 +31,7 @@ type SaasApp struct {
 }
 
 //=============================================================
-// 
+//
 //=============================================================
 /*
 func CreateApp(db *sql.DB, userName string, repoName string, itemName string) (bool, error) {
@@ -172,7 +171,7 @@ func ValidateSortOrder(sortOrder string, defaultOrder bool) bool {
 	case SortOrder_Desc:
 		return false
 	}
-	
+
 	return defaultOrder
 }
 
@@ -182,7 +181,7 @@ func getAppList(db *sql.DB, offset int64, limit int, sqlWhere string, sortOrder 
 	}
 
 	sql_where_all := sqlWhere
-	
+
 	count, err := queryAppsCount(db, sql_where_all)
 	if err != nil {
 		return 0, nil, err
@@ -191,11 +190,11 @@ func getAppList(db *sql.DB, offset int64, limit int, sqlWhere string, sortOrder 
 		return 0, []*SaasApp{}, nil
 	}
 	validateOffsetAndLimit(count, &offset, &limit)
-	
+
 	subs, err := queryApps(db,
 		fmt.Sprintf(`%s order by CREATE_TIME %s`, sql_where_all, sortOrderText[sortOrder]),
 		limit, offset)
-	
+
 	return count, subs, err
 }
 
@@ -212,10 +211,10 @@ func scanAppWithRows(rows *sql.Rows, s *SaasApp) error {
 
 func queryAppsCount(db *sql.DB, sqlWhere string) (int64, error) {
 	count := int64(0)
-	
+
 	sql_str := fmt.Sprintf(`%s where %s`, sqlSelectCountFromApp, sqlWhere)
 	err := db.QueryRow(sql_str).Scan(&count)
-	
+
 	return count, err
 }
 
