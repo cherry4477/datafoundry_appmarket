@@ -17,7 +17,7 @@ import (
 
 	"github.com/asiainfoLDP/datahub_commons/common"
 	"github.com/asiainfoLDP/datahub_commons/log"
-	
+
 	"github.com/asiainfoLDP/datafoundry_appmarket/market"
 )
 
@@ -26,8 +26,8 @@ import (
 //======================================================
 
 const (
-	Platform_Local      = "local"
-	Platform_DataOS     = "dataos"
+	Platform_Local  = "local"
+	Platform_DataOS = "dataos"
 )
 
 var Platform = Platform_DataOS
@@ -36,13 +36,15 @@ var Port int
 var Debug = false
 var Logger = log.DefaultlLogger()
 
-func Init (router *httprouter.Router) bool {
+func Init(router *httprouter.Router) bool {
 	Platform = os.Getenv("CLOUD_PLATFORM")
 	if Platform == "" {
 		Platform = Platform_DataOS
 	}
 
-	if initDB() == false {return false}
+	if initDB() == false {
+		return false
+	}
 
 	initRouter(router)
 
@@ -50,11 +52,11 @@ func Init (router *httprouter.Router) bool {
 }
 
 func initRouter(router *httprouter.Router) {
-	router.POST("/saasappapi/v1/apps", TimeoutHandle(500 * time.Millisecond, CreateApp))
-	router.DELETE("/saasappapi/v1/apps/:id", TimeoutHandle(500 * time.Millisecond, DeleteApp))
-	router.PUT("/saasappapi/v1/apps/:id", TimeoutHandle(500 * time.Millisecond, ModifyApp))
-	router.GET("/saasappapi/v1/apps/:id", TimeoutHandle(500 * time.Millisecond, RetrieveApp))
-	router.GET("/saasappapi/v1/apps", TimeoutHandle(500 * time.Millisecond, QueryAppList))
+	router.POST("/saasappapi/v1/apps", TimeoutHandle(500*time.Millisecond, CreateApp))
+	router.DELETE("/saasappapi/v1/apps/:id", TimeoutHandle(500*time.Millisecond, DeleteApp))
+	router.PUT("/saasappapi/v1/apps/:id", TimeoutHandle(500*time.Millisecond, ModifyApp))
+	router.GET("/saasappapi/v1/apps/:id", TimeoutHandle(500*time.Millisecond, RetrieveApp))
+	router.GET("/saasappapi/v1/apps", TimeoutHandle(500*time.Millisecond, QueryAppList))
 }
 
 //=============================
@@ -64,7 +66,7 @@ func initRouter(router *httprouter.Router) {
 func MysqlAddrPort() (string, string) {
 	//switch Platform {
 	//case Platform_DataOS:
-		return os.Getenv(os.Getenv("ENV_NAME_MYSQL_ADDR")), os.Getenv(os.Getenv("ENV_NAME_MYSQL_PORT"))
+	return os.Getenv(os.Getenv("ENV_NAME_MYSQL_ADDR")), os.Getenv(os.Getenv("ENV_NAME_MYSQL_PORT"))
 	//case Platform_Local:
 	//	return os.Getenv("MYSQL_PORT_3306_TCP_ADDR"), os.Getenv("MYSQL_PORT_3306_TCP_PORT")
 	//}
@@ -75,13 +77,13 @@ func MysqlAddrPort() (string, string) {
 func MysqlDatabaseUsernamePassword() (string, string, string) {
 	//switch Platform {
 	//case Platform_DataOS:
-		return os.Getenv(os.Getenv("ENV_NAME_MYSQL_DATABASE")), 
-			os.Getenv(os.Getenv("ENV_NAME_MYSQL_USER")), 
-			os.Getenv(os.Getenv("ENV_NAME_MYSQL_PASSWORD"))
+	return os.Getenv(os.Getenv("ENV_NAME_MYSQL_DATABASE")),
+		os.Getenv(os.Getenv("ENV_NAME_MYSQL_USER")),
+		os.Getenv(os.Getenv("ENV_NAME_MYSQL_PASSWORD"))
 	//}
 	//
-	//return os.Getenv("MYSQL_ENV_MYSQL_DATABASE"), 
-	//	os.Getenv("MYSQL_ENV_MYSQL_USER"), 
+	//return os.Getenv("MYSQL_ENV_MYSQL_DATABASE"),
+	//	os.Getenv("MYSQL_ENV_MYSQL_USER"),
 	//	os.Getenv("MYSQL_ENV_MYSQL_PASSWORD")
 }
 
@@ -121,14 +123,14 @@ func initDB() bool {
 	upgradeDB()
 
 	go updateDB()
-	
-	return  true
+
+	return true
 }
 
 func updateDB() {
 	var err error
 	ticker := time.Tick(5 * time.Second)
-	for _ = range ticker {
+	for range ticker {
 		if ds.db == nil {
 			connectDB()
 		} else if err = ds.db.Ping(); err != nil {
@@ -142,7 +144,7 @@ func updateDB() {
 func connectDB() {
 	DB_ADDR, DB_PORT := MysqlAddrPort()
 	DB_DATABASE, DB_USER, DB_PASSWORD := MysqlDatabaseUsernamePassword()
-	
+
 	DB_URL := fmt.Sprintf(`%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=true`, DB_USER, DB_PASSWORD, DB_ADDR, DB_PORT, DB_DATABASE)
 
 	Logger.Info("connect to ", DB_URL)
@@ -150,7 +152,7 @@ func connectDB() {
 	if err == nil {
 		err = db.Ping()
 	}
-	
+
 	if err != nil {
 		Logger.Errorf("error: %s\n", err)
 	} else {
@@ -203,7 +205,7 @@ func JsonResult(w http.ResponseWriter, statusCode int, e *Error, data interface{
 		e = ErrorNone
 	}
 	result := Result{Code: e.code, Msg: e.message, Data: data}
-	jsondata, err := json.Marshal(&result)
+	jsondata, err := json.MarshalIndent(&result, "", "  ")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(getJsonBuildingErrorJson()))
@@ -459,7 +461,7 @@ func optionalOffsetAndSize(r *http.Request, defaultSize int64, minSize int64, ma
 		page = 1
 	}
 	page -= 1
-	
+
 	if minSize < 1 {
 		minSize = 1
 	}
@@ -469,14 +471,14 @@ func optionalOffsetAndSize(r *http.Request, defaultSize int64, minSize int64, ma
 	if minSize > maxSize {
 		minSize, maxSize = maxSize, minSize
 	}
-	
+
 	size := optionalIntParamInQuery(r, "size", defaultSize)
 	if size < minSize {
 		size = minSize
 	} else if size > maxSize {
 		size = maxSize
 	}
-	
+
 	return page * size, int(size)
 }
 
@@ -490,7 +492,7 @@ func mustOffsetAndSize(r *http.Request, defaultSize, minSize, maxSize int) (offs
 	if minSize > maxSize {
 		minSize, maxSize = maxSize, minSize
 	}
-	
+
 	page_size := int64(defaultSize)
 	if r.Form.Get("size") != "" {
 		page_size, e = mustIntParamInQuery(r, "size")
@@ -521,7 +523,6 @@ func mustOffsetAndSize(r *http.Request, defaultSize, minSize, maxSize int) (offs
 	}
 
 	offset = page * page_size
-	
+
 	return
 }
-
