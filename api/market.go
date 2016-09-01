@@ -30,6 +30,7 @@ func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	app := &market.SaasApp {
 		App_id:      123,
 		Provider:    "ABCD ltd.",
+		Url:         "/",
 		Name:        "Quick mail",
 		Version:     "1.0.0",
 		Category:    "email",
@@ -45,6 +46,7 @@ func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Param
 	app := &market.SaasApp {
 		App_id:      123,
 		Provider:    "ABCD ltd.",
+		Url:         "/",
 		Name:        "Quick mail",
 		Version:     "1.0.0",
 		Category:    "email",
@@ -61,6 +63,7 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 		&market.SaasApp {
 			App_id:      123,
 			Provider:    "ABCD ltd.",
+			Url:         "/",
 			Name:        "Quick mail",
 			Version:     "1.0.0",
 			Category:    "email",
@@ -71,6 +74,7 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 		&market.SaasApp {
 			App_id:      789,
 			Provider:    "WXYZ ltd.",
+			Url:         "/",
 			Name:        "net disk",
 			Version:     "2.0.0",
 			Category:    "storage",
@@ -79,6 +83,10 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 			Create_time: time.Now(),
 		},
 	}
+	apps = append(apps, apps...)
+	apps = append(apps, apps...)
+	apps = append(apps, apps...)
+	apps = append(apps, apps...)
 
 	JsonResult(w, http.StatusOK, nil, newQueryListResult(int64(len(apps)), apps))
 }

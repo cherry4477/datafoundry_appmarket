@@ -21,6 +21,7 @@ import (
 type SaasApp struct {
 	App_id      int       `json:"appId,omitempty"`
 	Provider    string    `json:"provider,omitempty"`
+	Url         string    `json:"url,omitempty"`
 	Name        string    `json:"name,omitempty"`
 	Version     string    `json:"version,omitempty"`
 	Category    string    `json:"category,omitempty"`

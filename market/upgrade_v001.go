@@ -18,7 +18,7 @@ type DatabaseUpgrader_0 struct {
 func newDatabaseUpgrader_0() *DatabaseUpgrader_0 {
 	updater := &DatabaseUpgrader_0{}
 	
-	updater.currentTableCreationSqlFile = "initdb_v0.1.sql"
+	updater.currentTableCreationSqlFile = "initdb_v001.sql"
 	
 	updater.oldVersion = 0
 	updater.newVersion = 1
