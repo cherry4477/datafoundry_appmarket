@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 	//"net"
+	"sync"
 
 	"github.com/julienschmidt/httprouter"
 	//"github.com/miekg/dns"
@@ -87,26 +88,31 @@ func MysqlDatabaseUsernamePassword() (string, string, string) {
 	//	os.Getenv("MYSQL_ENV_MYSQL_PASSWORD")
 }
 
-type Ds struct {
-	db *sql.DB
-}
-
 var (
-	ds = new(Ds)
+	dbInstance *sql.DB
+	dbMutex sync.Mutex
 )
 
 func getDB() *sql.DB {
 	if market.IsServing() {
-		return ds.db
+		dbMutex.Lock()
+		defer dbMutex.Unlock()
+		return dbInstance
 	} else {
 		return nil
 	}
 }
 
+func setDB(db *sql.DB) {
+	dbMutex.Lock()
+	dbInstance = db
+	dbMutex.Unlock()
+}
+
 func initDB() bool {
 	for i := 0; i < 3; i++ {
 		connectDB()
-		if ds.db == nil {
+		if getDB() == nil {
 			select {
 			case <-time.After(time.Second * 10):
 				continue
@@ -116,7 +122,7 @@ func initDB() bool {
 		}
 	}
 
-	if ds.db == nil {
+	if getDB() == nil {
 		return false
 	}
 
@@ -131,11 +137,12 @@ func updateDB() {
 	var err error
 	ticker := time.Tick(5 * time.Second)
 	for range ticker {
-		if ds.db == nil {
+		db := getDB()
+		if db == nil {
 			connectDB()
-		} else if err = ds.db.Ping(); err != nil {
-			ds.db.Close()
-			//ds.db = nil // draw snake feet
+		} else if err = db.Ping(); err != nil {
+			db.Close()
+			// setDB(nil) // draw snake feet
 			connectDB()
 		}
 	}
@@ -156,12 +163,12 @@ func connectDB() {
 	if err != nil {
 		Logger.Errorf("error: %s\n", err)
 	} else {
-		ds.db = db
+		setDB(db)
 	}
 }
 
 func upgradeDB() {
-	err := market.TryToUpgradeDatabase(ds.db, "datafoundry:appmarket", os.Getenv("MYSQL_CONFIG_DONT_UPGRADE_TABLES") != "yes") // don't change the name
+	err := market.TryToUpgradeDatabase(getDB(), "datafoundry:appmarket", os.Getenv("MYSQL_CONFIG_DONT_UPGRADE_TABLES") != "yes") // don't change the name
 	if err != nil {
 		Logger.Errorf("TryToUpgradeDatabase error: %s", err.Error())
 	}

@@ -1,7 +1,7 @@
 package market
 
 import (
-	//"database/sql"
+	"database/sql"
 	//"errors"
 	//"fmt"
 	"time"
@@ -28,11 +28,18 @@ type SaasApp struct {
 	Icon_url    string    `json:"iconUrl,omitempty"`
 	Create_time time.Time `json:"createTime,omitempty"`
 	Hotness     int       `json:"-"`
+	// Price_plans
+	// Usage_readme
 }
 
 //=============================================================
 //
 //=============================================================
+
+func CreateApp(db *sql.DB, app *SaasApp) error {
+	return nil
+}
+
 /*
 func CreateApp(db *sql.DB, userName string, repoName string, itemName string) (bool, error) {
 	star, err := RetrieveAppByUserAndItem(db, userName, repoName, itemName)
@@ -59,7 +66,17 @@ func CreateApp(db *sql.DB, userName string, repoName string, itemName string) (b
 
 	return true, nil
 }
+*/
 
+func ModifyApp(db *sql.DB, app *SaasApp) (*SaasApp, error) {
+	return nil, nil
+}
+
+func DeleteApp(db *sql.DB, appId string) error {
+	return nil
+}
+
+/*
 func DeleteApp(db *sql.DB, userName string, repoName string, itemName string) (bool, error) {
 	sqlstr := fmt.Sprintf(`delete from DF_SAAS_APP
 							where USER_NAME='%s' and REPOSITORY_NAME='%s' and DATAITEM_NAME='%s'
@@ -79,7 +96,13 @@ func DeleteApp(db *sql.DB, userName string, repoName string, itemName string) (b
 
 	return true, nil
 }
+*/
 
+func RetrieveApp(db *sql.DB, appId string) (*SaasApp, error) {
+	return nil, nil
+}
+
+/*
 func RetrieveAppByUserAndItem(db *sql.DB, userName string, repoName string, itemName string) (*SaasApp, error) {
 	return getSingleApp(db,
 		fmt.Sprintf("USER_NAME='%s' and REPOSITORY_NAME='%s' and DATAITEM_NAME='%s'", userName, repoName, itemName))
@@ -105,6 +128,14 @@ func getSingleApp(db *sql.DB, sqlWhere string) (*SaasApp, error) {
 
 	return stars[0], nil
 }
+*/
+
+func QueryApps(db *sql.DB, provider, category, orderBy string) ([]*SaasApp, error) {
+	return nil, nil
+}
+
+
+/*
 
 func GetUserApps(db *sql.DB, userName string, offset int64, limit int, sortOrder bool) (int64, []*SaasApp, error) {
 	count, stars, err := getAppList(db, offset, limit, fmt.Sprintf("USER_NAME='%s'", userName), sortOrder)
