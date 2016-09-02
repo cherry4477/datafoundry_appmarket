@@ -110,6 +110,8 @@ func setDB(db *sql.DB) {
 }
 
 func initDB() bool {
+	return true // temp, mysqlnocase.servicebroker.dataos.io is not available now.
+
 	for i := 0; i < 3; i++ {
 		connectDB()
 		if getDB() == nil {
