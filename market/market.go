@@ -2,11 +2,11 @@ package market
 
 import (
 	"database/sql"
-	//"errors"
-	//"fmt"
+	"errors"
+	"fmt"
 	"time"
 	//"bytes"
-	//"strings"
+	"strings"
 	//"io/ioutil"
 	//"path/filepath"s
 	//stat "github.com/asiainfoLDP/datafoundry_appmarket/statistics"
@@ -36,84 +36,86 @@ type SaasApp struct {
 //
 //=============================================================
 
-func CreateApp(db *sql.DB, app *SaasApp) error {
-	return nil
-}
-
-/*
-func CreateApp(db *sql.DB, userName string, repoName string, itemName string) (bool, error) {
-	star, err := RetrieveAppByUserAndItem(db, userName, repoName, itemName)
-	if star != nil {
-		return false, errors.New("already subscribed")
-	} else if err != nil {
-		return false, err
+func CreateApp(db *sql.DB, appInfo *SaasApp) error {
+	app, err := RetrieveAppByID(db, appInfo.App_id)
+	if err != nil {
+		return err
+	}
+	if app != nil {
+		return fmt.Errorf("app (id=%s) already existed", appInfo.App_id)
 	}
 
 	nowstr := time.Now().Format("2006-01-02 15:04:05.999999")
-	sqlstr := fmt.Sprintf(`insert into DF_SAAS_APP
-							(USER_NAME, REPOSITORY_NAME, DATAITEM_NAME, CREATE_TIME)
-							values ('%s', '%s', '%s', '%s')
-							`, userName, repoName, itemName, nowstr)
-	_, err = db.Exec(sqlstr)
+	sqlstr := fmt.Sprintf(`insert into DF_SAAS_APP_2 (
+				APP_ID, 
+				PROVIDER, URL, NAME, VERSION, 
+				CATEGORY, DESCRIPTION, ICON_URL,
+				CREATE_TIME, HOTNESS
+				) values (
+				'%s', 
+				?, ?, ?, ?,
+				?, ?, ?,
+				'%s', 0
+				)`, 
+				appInfo.App_id,
+				nowstr,
+				)
+	_, err = db.Exec(sqlstr,
+				appInfo.Provider, appInfo.Url, appInfo.Name, appInfo.Version,
+				appInfo.Category, appInfo.Description, appInfo.Icon_url,
+				)
+
+	return err
+}
+
+func ModifyApp(db *sql.DB, appInfo *SaasApp) error {
+	sqlstr := fmt.Sprintf(`update DF_SAAS_APP_2 set
+				PROVIDER=?, URL=?, NAME=?, VERSION=?, 
+				CATEGORY=?, DESCRIPTION=?, ICON_URL=?,
+				where APP_ID='%s'`, 
+				appInfo.App_id,
+				)
+	result, err := db.Exec(sqlstr,
+				appInfo.Provider, appInfo.Url, appInfo.Name, appInfo.Version,
+				appInfo.Category, appInfo.Description, appInfo.Icon_url,
+				)
+	
 	if err != nil {
-		return false, err
-	}
-
-	go func() {
-		stat.UpdateStat(db, stat.GetAppsStatKey(repoName, itemName), 1)
-		stat.UpdateStat(db, stat.GetAppsStatKey(repoName), 1)
-	}()
-
-	return true, nil
-}
-*/
-
-func ModifyApp(db *sql.DB, app *SaasApp) (*SaasApp, error) {
-	return nil, nil
-}
-
-func DeleteApp(db *sql.DB, appId string) error {
-	return nil
-}
-
-/*
-func DeleteApp(db *sql.DB, userName string, repoName string, itemName string) (bool, error) {
-	sqlstr := fmt.Sprintf(`delete from DF_SAAS_APP
-							where USER_NAME='%s' and REPOSITORY_NAME='%s' and DATAITEM_NAME='%s'
-							`, userName, repoName, itemName)
-	result, err := db.Exec(sqlstr)
-	if err != nil {
-		return false, err
+		return err
 	}
 
 	n, _ := result.RowsAffected()
-	if n > 0 {
-		go func() {
-			stat.UpdateStat(db, stat.GetAppsStatKey(repoName, itemName), -int(n))
-			stat.UpdateStat(db, stat.GetAppsStatKey(repoName), -int(n))
-		}()
+	if n < 1 {
+		return fmt.Errorf("app (%s) not found", appInfo.App_id)
 	}
 
-	return true, nil
-}
-*/
-
-func RetrieveApp(db *sql.DB, appId string) (*SaasApp, error) {
-	return nil, nil
+	return nil
 }
 
-/*
-func RetrieveAppByUserAndItem(db *sql.DB, userName string, repoName string, itemName string) (*SaasApp, error) {
-	return getSingleApp(db,
-		fmt.Sprintf("USER_NAME='%s' and REPOSITORY_NAME='%s' and DATAITEM_NAME='%s'", userName, repoName, itemName))
+func DeleteApp(db *sql.DB, appId string) error {
+	sqlstr := fmt.Sprintf(`delete from DF_SAAS_APP_2
+				where APP_ID='%s'`, 
+				appId,
+				)
+	result, err := db.Exec(sqlstr)
+	if err != nil {
+		return err
+	}
+
+	n, _ := result.RowsAffected()
+	if n == 0 {
+		return errors.New ("failed to delete")
+	}
+
+	return nil
 }
 
-func RetrieveAppByID(db *sql.DB, AppId int) (*SaasApp, error) {
-	return getSingleApp(db, fmt.Sprintf("App_ID=%d", AppId))
+func RetrieveAppByID(db *sql.DB, appId string) (*SaasApp, error) {
+	return getSingleApp(db, fmt.Sprintf("App_ID=%s", appId))
 }
 
 func getSingleApp(db *sql.DB, sqlWhere string) (*SaasApp, error) {
-	stars, err := queryApps(db, sqlWhere, 1, 0)
+	apps, err := queryApps(db, sqlWhere, 1, 0)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -122,55 +124,58 @@ func getSingleApp(db *sql.DB, sqlWhere string) (*SaasApp, error) {
 		}
 	}
 
-	if len(stars) == 0 {
+	if len(apps) == 0 {
 		return nil, nil
 	}
 
-	return stars[0], nil
-}
-*/
-
-func QueryApps(db *sql.DB, provider, category, orderBy string) ([]*SaasApp, error) {
-	return nil, nil
+	return apps[0], nil
 }
 
+func QueryApps(db *sql.DB, provider, category, orderBy string, sortOrder bool, offset int64, limit int) (int64, []*SaasApp, error) {
+	sqlParams := make([]interface{}, 0, 4)
+	
+	// ...
 
-/*
-
-func GetUserApps(db *sql.DB, userName string, offset int64, limit int, sortOrder bool) (int64, []*SaasApp, error) {
-	count, stars, err := getAppList(db, offset, limit, fmt.Sprintf("USER_NAME='%s'", userName), sortOrder)
-	for i := len(stars) - 1; i >= 0; i-- {
-		star := stars[i]
-		star.User_name = ""
+	sqlWhere := ""
+	provider = strings.ToLower(provider)
+	if provider != "" {
+		if sqlWhere == "" {
+			sqlWhere = "PROVIDER=?"
+		} else {
+			sqlWhere = sqlWhere + " and PROVIDER=?"
+		}
+		sqlParams = append(sqlParams, provider)
 	}
-	return count, stars, err
-}
-
-func GetUserAppsInRepository(db *sql.DB, userName string, repoName string, offset int64, limit int, sortOrder bool) (int64, []*SaasApp, error) {
-	count, stars, err := getAppList(db, offset, limit,
-		fmt.Sprintf("USER_NAME='%s' and REPOSITORY_NAME='%s'", userName, repoName), sortOrder)
-	for i := len(stars) - 1; i >= 0; i-- {
-		star := stars[i]
-		star.User_name = ""
-		star.Repository_name = ""
+	if category != "" {
+		if sqlWhere == "" {
+			sqlWhere = "CATEGORY=?"
+		} else {
+			sqlWhere = sqlWhere + " and CATEGORY=?"
+		}
+		sqlParams = append(sqlParams, category)
 	}
-	return count, stars, err
-}
 
-func GetAppsInRepository(db *sql.DB, repoName string, offset int64, limit int, sortOrder bool) (int64, []*SaasApp, error) {
-	count, stars, err := getAppList(db, offset, limit,
-		fmt.Sprintf("REPOSITORY_NAME='%s'", repoName), sortOrder)
-	for i := len(stars) - 1; i >= 0; i-- {
-		star := stars[i]
-		star.Repository_name = ""
+	// ...
+	
+	switch strings.ToLower(orderBy) {
+	default:
+		orderBy = "CREATE_TIME"
+		sortOrder = false
+	case "createtime":
+		orderBy = "CREATE_TIME"
+	case "hotness":
+		orderBy = "HOTNESS"
 	}
-	return count, stars, err
+
+	sqlSort := fmt.Sprintf("%s %s", orderBy, sortOrderText[sortOrder])
+
+	// ...
+
+	return getAppList(db, offset, limit, sqlWhere, sqlSort, sqlParams...)
 }
-*/
 
 //================================================
 
-/*
 func validateOffsetAndLimit(count int64, offset *int64, limit *int) {
 	if *limit < 1 {
 		*limit = 1
@@ -206,14 +211,12 @@ func ValidateSortOrder(sortOrder string, defaultOrder bool) bool {
 	return defaultOrder
 }
 
-func getAppList(db *sql.DB, offset int64, limit int, sqlWhere string, sortOrder bool) (int64, []*SaasApp, error) {
+func getAppList(db *sql.DB, offset int64, limit int, sqlWhere string, sqlSort string, sqlParams ...interface{}) (int64, []*SaasApp, error) {
 	if strings.TrimSpace(sqlWhere) == "" {
 		return 0, nil, errors.New("sqlWhere can't be blank")
 	}
 
-	sql_where_all := sqlWhere
-
-	count, err := queryAppsCount(db, sql_where_all)
+	count, err := queryAppsCount(db, sqlWhere)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -223,72 +226,74 @@ func getAppList(db *sql.DB, offset int64, limit int, sqlWhere string, sortOrder 
 	validateOffsetAndLimit(count, &offset, &limit)
 
 	subs, err := queryApps(db,
-		fmt.Sprintf(`%s order by CREATE_TIME %s`, sql_where_all, sortOrderText[sortOrder]),
-		limit, offset)
+		fmt.Sprintf(`%s order by %s`, sqlWhere, sqlSort),
+		limit, offset, sqlParams...)
 
 	return count, subs, err
 }
 
-const sqlSelectCountFromApp = `select COUNT(*) from DF_SAAS_APP`
-const sqlSelectAllFromApp = `select
-					USER_NAME, REPOSITORY_NAME, DATAITEM_NAME,
-					CREATE_TIME
-					from DF_SAAS_APP`
-func scanAppWithRows(rows *sql.Rows, s *SaasApp) error {
-	err := rows.Scan(&s.User_name, &s.Repository_name, &s.Dataitem_name, &s.Optime)
-	return err
-}
+func queryAppsCount(db *sql.DB, sqlWhere string, sqlParams ...interface{}) (int64, error) {
+	sqlWhere = strings.TrimSpace(sqlWhere)
+	sql_where_all := ""
+	if sqlWhere != "" {
+		sql_where_all = fmt.Sprintf("where %s", sqlWhere)
+	}
 
-
-func queryAppsCount(db *sql.DB, sqlWhere string) (int64, error) {
 	count := int64(0)
-
-	sql_str := fmt.Sprintf(`%s where %s`, sqlSelectCountFromApp, sqlWhere)
-	err := db.QueryRow(sql_str).Scan(&count)
+	sql_str := fmt.Sprintf(`select COUNT(*) from DF_SAAS_APP_2 %s`, sql_where_all)
+	err := db.QueryRow(sql_str, sqlParams...).Scan(&count)
 
 	return count, err
 }
 
-func queryApps(db *sql.DB, sqlWhere string, limit int, offset int64) ([]*SaasApp, error) {
+func queryApps(db *sql.DB, sqlWhere string, limit int, offset int64, sqlParams ...interface{}) ([]*SaasApp, error) {
+	sqlWhere = strings.TrimSpace(sqlWhere)
+	sql_where_all := ""
+	if sqlWhere != "" {
+		sql_where_all = fmt.Sprintf("where %s", sqlWhere)
+	}
+
 	offset_str := ""
 	if offset > 0 {
 		offset_str = fmt.Sprintf("offset %d", offset)
 	}
-	sql_str := fmt.Sprintf(`
+	sql_str := fmt.Sprintf(`select
+					APP_ID, 
+					PROVIDER, URL, NAME, VERSION, 
+					CATEGORY, DESCRIPTION, ICON_URL,
+					CREATE_TIME, HOTNESS
+					from DF_SAAS_APP_2
 					%s
-					where %s
 					limit %d
 					%s
 					`,
-		sqlSelectAllFromApp,
-		sqlWhere,
+		sql_where_all,
 		limit,
 		offset_str)
-	rows, err := db.Query(sql_str)
+	rows, err := db.Query(sql_str, sqlParams...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	subs := make([]*SaasApp, 32)
-	num := 0
+	apps := make([]*SaasApp, 0, 100)
 	for rows.Next() {
-		s := &SaasApp{}
-		if err := scanAppWithRows(rows, s); err != nil {
+		app := &SaasApp{}
+		err := rows.Scan(
+			&app.App_id,
+			&app.Provider, &app.Url, &app.Name, &app.Version,
+			&app.Category, &app.Description, &app.Icon_url,
+			&app.Create_time, &app.Hotness,
+		)
+		if err != nil {
 			return nil, err
 		}
 		//validateApp(s) // already done in scanAppWithRows
-		if num >= len(subs) {
-			subs = append(subs, s)
-		} else {
-			subs[num] = s
-		}
-		num++
+		apps = append(apps, app)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return subs[:num], nil
+	return apps, nil
 }
-*/

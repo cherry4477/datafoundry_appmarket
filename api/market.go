@@ -142,14 +142,14 @@ func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 		Icon_url:    iconUrl,
 	}
 
-	app, err := market.ModifyApp(db, app)
+	err := market.ModifyApp(db, app)
 	if err != nil {
 		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeModifyApp, err.Error()), nil)
 		return
 	}
 
 
-	JsonResult(w, http.StatusOK, nil, app)
+	JsonResult(w, http.StatusOK, nil, nil)
 }
 
 func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -171,7 +171,7 @@ func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Param
 
 	appId := params.ByName("appid")
 
-	app, err := market.RetrieveApp(db, appId)
+	app, err := market.RetrieveAppByID(db, appId)
 	if err != nil {
 		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeGetApp, err.Error()), nil)
 		return
@@ -206,20 +206,23 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 	provider := ""
 	category := ""
 	orderBy := ""
+	sortOrder := false
+	var offset int64 = 0
+	var limit int = 100
 
-	apps, err := market.QueryApps(db, provider, category, orderBy)
+	count, apps, err := market.QueryApps(db, provider, category, orderBy, sortOrder, offset, limit)
 	if err != nil {
 		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeQueryApps, err.Error()), nil)
 		return
 	}
 
-	JsonResult(w, http.StatusOK, nil, newQueryListResult(int64(len(apps)), apps))
+	JsonResult(w, http.StatusOK, nil, newQueryListResult(count, apps))
 }
 
 
 var appNewRelic = market.SaasApp{
-	App_id:      "52FDFC07-2182-654F-163F-5F0F9A621D72",
-	Provider:    "DaoCloud",
+	App_id:      "98DED98A-F7A1-EDF2-3DF7-B799333D2FD2",
+	Provider:    "New Relic",
 	Url:         "https://dashboard.daocloud.io/orgs/asiainfo_dev/services/fec195f5-3440-4f13-94da-48d5008b6eb6",
 	Name:        "New Relic",
 	Version:     "",
@@ -231,3 +234,20 @@ New Relic是一款基于 SaaS 的云端应用监测与管理平台，可以监�
 	Create_time: time.Now(),
 
 }
+
+/*
+var appNewSMS = market.SaasApp{
+	App_id:      "DC3E7112-4202-8593-771D-824197CE79D0",
+	Provider:    "AsiaInfo",
+	Url:         "http://124.207.3.112:18351/smsservice/send",
+	Name:        "SMS Gateway",
+	Version:     "",
+	Category:    "sms",
+	Description: 	`
+亚信短信网关
+`,
+	Icon_url:    "",
+	Create_time: time.Now(),
+
+}
+*/
