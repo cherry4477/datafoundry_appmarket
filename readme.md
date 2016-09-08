@@ -112,8 +112,11 @@ data.createTime
 Query Parameters:
 ```
 category: app的类别。可选。如果忽略，表示所有类别。
+provider: 提供方。可选。如果忽略，表示所有提供方。
 orderby: 排序依据。可选。合法值包括hotness|createtime，默认为hotness。
-provider: 提供方。可选。
+sortOrder: 排序方向。可选。合法值包括asc|desc，默认为desc。
+page: 第几页。可选。最小值为1。默认为1。
+size: 每页最多返回多少条数据。可选。最小为1，最大为100。默认为30。
 ```
 
 Return Result (json):

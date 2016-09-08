@@ -357,34 +357,37 @@ func mustFloatParam(params httprouter.Params, paramName string) (float64, *Error
 	return f, nil
 }
 
-func mustStringParamInPath(params httprouter.Params, paramName string, paramType int) (string, *Error) {
-	str := params.ByName(paramName)
+// todo: add max length param
+func _mustStringParam(paramName string, str string, maxLength int, paramType int) (string, *Error) {
 	if str == "" {
-		return "", newInvalidParameterError(fmt.Sprintf("path: %s can't be blank", paramName))
+		return "", newInvalidParameterError(fmt.Sprintf("%s can't be blank", paramName))
+	}
+	if len(str) > maxLength {
+		return "", newInvalidParameterError(fmt.Sprintf("%s is too long", paramName))
 	}
 
 	if paramType == StringParamType_UrlWord {
 		str2, ok := common.ValidateUrlWord(str)
 		if !ok {
-			return "", newInvalidParameterError(fmt.Sprintf("path: %s=%s", paramName, str))
+			return "", newInvalidParameterError(fmt.Sprintf("%s=%s", paramName, str))
 		}
 		str = str2
 	} else if paramType == StringParamType_UnicodeUrlWord {
 		str2, ok := common.ValidateUnicodeUrlWord(str)
 		if !ok {
-			return "", newInvalidParameterError(fmt.Sprintf("path: %s=%s", paramName, str))
+			return "", newInvalidParameterError(fmt.Sprintf("%s=%s", paramName, str))
 		}
 		str = str2
 	} else if paramType == StringParamType_Email {
 		str2, ok := common.ValidateEmail(str)
 		if !ok {
-			return "", newInvalidParameterError(fmt.Sprintf("path: %s=%s", paramName, str))
+			return "", newInvalidParameterError(fmt.Sprintf("%s=%s", paramName, str))
 		}
 		str = str2
-	} else {
+	} else { // if paramType == StringParamType_General
 		str2, ok := common.ValidateGeneralWord(str)
 		if !ok {
-			return "", newInvalidParameterError(fmt.Sprintf("path: %s=%s", paramName, str))
+			return "", newInvalidParameterError(fmt.Sprintf("%s=%s", paramName, str))
 		}
 		str = str2
 	}
@@ -392,21 +395,26 @@ func mustStringParamInPath(params httprouter.Params, paramName string, paramType
 	return str, nil
 }
 
-func mustStringParamInQuery(r *http.Request, paramName string, paramType int) (string, *Error) {
-	str := r.Form.Get(paramName)
-	if str == "" {
-		return "", newInvalidParameterError(fmt.Sprintf("query: %s can't be blank", paramName))
-	}
+func mustStringParamInPath(params httprouter.Params, paramName string, maxLength int, paramType int) (string, *Error) {
+	return _mustStringParam(paramName, params.ByName(paramName), maxLength, paramType)
+}
 
-	if paramType == StringParamType_UrlWord {
-		str2, ok := common.ValidateUrlWord(str)
-		if !ok {
-			return "", newInvalidParameterError(fmt.Sprintf("query: %s=%s", paramName, str))
+func mustStringParamInQuery(r *http.Request, paramName string, maxLength int, paramType int) (string, *Error) {
+	return _mustStringParam(paramName, r.Form.Get(paramName), maxLength, paramType)
+}
+
+func mustStringParamInMap(m map[string]interface{}, paramName string, maxLength int, paramType int) (string, *Error) {
+	v, ok := m[paramName]
+	if ok {
+		str, ok := v.(string)
+		if ok {
+			return _mustStringParam(paramName, str, maxLength, paramType)
 		}
-		str = str2
+
+		return "", newInvalidParameterError(fmt.Sprintf("param %s is not string", paramName))
 	}
 
-	return str, nil
+	return "", newInvalidParameterError(fmt.Sprintf("param %s is not found", paramName))
 }
 
 //======================================================
@@ -439,29 +447,6 @@ func mustCurrentUserName(r *http.Request) (string, *Error) {
 
 func getCurrentUserName(r *http.Request) string {
 	return r.Header.Get("User")
-}
-
-func mustRepoName(params httprouter.Params) (string, *Error) {
-	repo_name, e := mustStringParamInPath(params, "repname", StringParamType_UrlWord)
-	if e != nil {
-		return "", e
-	}
-
-	return repo_name, nil
-}
-
-func mustRepoAndItemName(params httprouter.Params) (repo_name string, item_name string, e *Error) {
-	repo_name, e = mustStringParamInPath(params, "repname", StringParamType_UrlWord)
-	if e != nil {
-		return
-	}
-
-	item_name, e = mustStringParamInPath(params, "itemname", StringParamType_UrlWord)
-	if e != nil {
-		return
-	}
-
-	return
 }
 
 func optionalOffsetAndSize(r *http.Request, defaultSize int64, minSize int64, maxSize int64) (int64, int) {

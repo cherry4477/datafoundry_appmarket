@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 	"bytes"
+	"encoding/json"
 	
 	"github.com/asiainfoLDP/datahub_commons/log"
 )
@@ -89,3 +90,13 @@ func ParseRequestJsonAsMap(r *http.Request) (map[string]interface{}, error) {
 	
 	return m, err
 }
+
+func ParseRequestJsonInto(r *http.Request, into interface{}) error {
+	data, err := GetRequestData(r)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(data, into)
+}
+

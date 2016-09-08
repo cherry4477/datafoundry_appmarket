@@ -9,7 +9,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	//"github.com/asiainfoLDP/datahub_commons/common"
+	"github.com/asiainfoLDP/datahub_commons/common"
 
 	"github.com/asiainfoLDP/datafoundry_appmarket/market"
 )
@@ -38,18 +38,55 @@ func genUUID() string {
 //
 //==================================================================
 
-type SaasApp struct {
-	App_id      string    `json:"appId,omitempty"`
-	Provider    string    `json:"provider,omitempty"`
-	Url         string    `json:"url,omitempty"`
-	Name        string    `json:"name,omitempty"`
-	Version     string    `json:"version,omitempty"`
-	Category    string    `json:"category,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Icon_url    string    `json:"iconUrl,omitempty"`
-	Create_time time.Time `json:"createTime,omitempty"`
-	Hotness     int       `json:"-"`
+func validateAppID(appId string) *Error {
+	// GetError2(ErrorCodeInvalidParameters, err.Error())
+	_, e := _mustStringParam("appid", appId, 50, StringParamType_UnicodeUrlWord)
+	return e
 }
+
+func validateAppInfo(app *market.SaasApp) *Error {
+
+	/*
+	app.Provider
+	app.Url
+	app.Name
+	app.Version
+	app.Category
+	app.Description
+	app.Icon_url
+	*/
+
+	return nil
+}
+
+func validateProvider(provider string) (string, *Error) {
+	if provider != "" {
+		provider_param, e := _mustStringParam("provider", provider, 50, StringParamType_UnicodeUrlWord)
+		if e != nil {
+			return "", e
+		}
+		provider = provider_param
+	}
+
+	return provider, nil
+}
+
+func validateCategory(category string) (string, *Error) {
+	if category != "" {
+		category_param, e := _mustStringParam("category", category, 25, StringParamType_UnicodeUrlWord)
+		if e != nil {
+			return "", e
+		}
+		category = category_param
+	}
+
+	return category, nil
+}
+
+//==================================================================
+//
+//==================================================================
+
 func CreateApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	// todo: auth
 	
@@ -60,34 +97,31 @@ func CreateApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 		return
 	}
 
-	provider := ""
-	url := ""
-	name := ""
-	version := ""
-	category := ""
-	description := ""
-	iconUrl := ""
-	
-	appId := genUUID()
-
-	app := &market.SaasApp {
-		App_id:      appId,
-		Provider:    provider,
-		Url:         url,
-		Name:        name,
-		Version:     version,
-		Category:    category,
-		Description: description,
-		Icon_url:    iconUrl,
+	app := &market.SaasApp{}
+	err := common.ParseRequestJsonInto(r, app)
+	if err != nil {
+		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeParseJsonFailed, err.Error()), nil)
+		return
 	}
 
-	err := market.CreateApp(db, app)
+	e := validateAppInfo(app)
+	if e != nil {
+		JsonResult(w, http.StatusBadRequest, e, nil)
+		return
+	}
+	
+	app.App_id = genUUID()
+	// followings will be ignored
+	//app.Create_time = time.Now()
+	//app.Hotness = 0
+
+	err = market.CreateApp(db, app)
 	if err != nil {
 		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeCreateApp, err.Error()), nil)
 		return
 	}
 
-	JsonResult(w, http.StatusOK, nil, appId)
+	JsonResult(w, http.StatusOK, nil, app.App_id)
 }
 
 func DeleteApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -100,7 +134,13 @@ func DeleteApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 		return
 	}
 
-	appId := ""
+	appId := params.ByName("appid")
+
+	e := validateAppID(appId)
+	if e != nil {
+		JsonResult(w, http.StatusBadRequest, e, nil)
+		return
+	}
 
 	err := market.DeleteApp(db, appId)
 	if err != nil {
@@ -121,28 +161,28 @@ func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 		return
 	}
 
-	appId := genUUID()
+	appId := params.ByName("appid")
 
-	provider := ""
-	url := ""
-	name := ""
-	version := ""
-	category := ""
-	description := ""
-	iconUrl := ""
-
-	app := &market.SaasApp {
-		App_id:      appId,
-		Provider:    provider,
-		Url:         url,
-		Name:        name,
-		Version:     version,
-		Category:    category,
-		Description: description,
-		Icon_url:    iconUrl,
+	e := validateAppID(appId)
+	if e != nil {
+		JsonResult(w, http.StatusBadRequest, e, nil)
+		return
 	}
 
-	err := market.ModifyApp(db, app)
+	app := &market.SaasApp{}
+	err := common.ParseRequestJsonInto(r, app)
+	if err != nil {
+		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeParseJsonFailed, err.Error()), nil)
+		return
+	}
+
+	e = validateAppInfo(app)
+	if e != nil {
+		JsonResult(w, http.StatusBadRequest, e, nil)
+		return
+	}
+
+	err = market.ModifyApp(db, app)
 	if err != nil {
 		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeModifyApp, err.Error()), nil)
 		return
@@ -156,10 +196,6 @@ func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Param
 	JsonResult(w, http.StatusOK, nil, appNewRelic)
 	return
 
-
-
-
-
 	// todo: auth
 	
 	// ...
@@ -171,6 +207,12 @@ func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Param
 
 	appId := params.ByName("appid")
 
+	e := validateAppID(appId)
+	if e != nil {
+		JsonResult(w, http.StatusBadRequest, e, nil)
+		return
+	}
+
 	app, err := market.RetrieveAppByID(db, appId)
 	if err != nil {
 		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeGetApp, err.Error()), nil)
@@ -180,6 +222,15 @@ func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Param
 	JsonResult(w, http.StatusOK, nil, app)
 }
 
+/*
+category: app的类别。可选。如果忽略，表示所有类别。
+provider: 提供方。可选。如果忽略，表示所有提供方。
+orderby: 排序依据。可选。合法值包括hotness|createtime，默认为hotness。
+sortOrder: 排序方向。可选。合法值包括asc|desc，默认为desc。
+page: 第几页。可选。最小值为1。默认为1。
+size: 每页最多返回多少条数据。可选。最小为1，最大为100。默认为30。
+*/
+
 func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	apps := []*market.SaasApp{
 		&appNewRelic,
@@ -187,10 +238,6 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 
 	JsonResult(w, http.StatusOK, nil, newQueryListResult(int64(len(apps)), apps))
 	return
-
-
-
-
 
 
 
@@ -203,14 +250,25 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 		return
 	}
 
-	provider := ""
-	category := ""
-	orderBy := ""
-	sortOrder := false
-	var offset int64 = 0
-	var limit int = 100
+	r.ParseForm()
 
-	count, apps, err := market.QueryApps(db, provider, category, orderBy, sortOrder, offset, limit)
+	provider, e := validateProvider(r.Form.Get("provider"))
+	if e != nil {
+		JsonResult(w, http.StatusBadRequest, e, nil)
+		return
+	}
+
+	category, e := validateCategory(r.Form.Get("category"))
+	if e != nil {
+		JsonResult(w, http.StatusBadRequest, e, nil)
+		return
+	}
+	
+	offset, size := optionalOffsetAndSize(r, 30, 1, 100)
+	orderBy := market.ValidateOrderBy(r.Form.Get("orderby"))
+	sortOrder := market.ValidateSortOrder(r.Form.Get("sortorder"), false)
+
+	count, apps, err := market.QueryApps(db, provider, category, orderBy, sortOrder, offset, size)
 	if err != nil {
 		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeQueryApps, err.Error()), nil)
 		return
