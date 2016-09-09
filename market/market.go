@@ -111,7 +111,7 @@ func DeleteApp(db *sql.DB, appId string) error {
 }
 
 func RetrieveAppByID(db *sql.DB, appId string) (*SaasApp, error) {
-	return getSingleApp(db, fmt.Sprintf("App_ID=%s", appId))
+	return getSingleApp(db, fmt.Sprintf("where App_ID='%s'", appId))
 }
 
 func getSingleApp(db *sql.DB, sqlWhere string) (*SaasApp, error) {
@@ -223,9 +223,9 @@ func ValidateOrderBy(orderBy string) string {
 }
 
 func getAppList(db *sql.DB, offset int64, limit int, sqlWhere string, sqlSort string, sqlParams ...interface{}) (int64, []*SaasApp, error) {
-	if strings.TrimSpace(sqlWhere) == "" {
-		return 0, nil, errors.New("sqlWhere can't be blank")
-	}
+	//if strings.TrimSpace(sqlWhere) == "" {
+	//	return 0, nil, errors.New("sqlWhere can't be blank")
+	//}
 
 	count, err := queryAppsCount(db, sqlWhere)
 	if err != nil {
@@ -257,13 +257,7 @@ func queryAppsCount(db *sql.DB, sqlWhere string, sqlParams ...interface{}) (int6
 	return count, err
 }
 
-func queryApps(db *sql.DB, sqlWhere string, limit int, offset int64, sqlParams ...interface{}) ([]*SaasApp, error) {
-	sqlWhere = strings.TrimSpace(sqlWhere)
-	sql_where_all := ""
-	if sqlWhere != "" {
-		sql_where_all = fmt.Sprintf("where %s", sqlWhere)
-	}
-
+func queryApps(db *sql.DB, sqlWhereAll string, limit int, offset int64, sqlParams ...interface{}) ([]*SaasApp, error) {
 	offset_str := ""
 	if offset > 0 {
 		offset_str = fmt.Sprintf("offset %d", offset)
@@ -278,10 +272,13 @@ func queryApps(db *sql.DB, sqlWhere string, limit int, offset int64, sqlParams .
 					limit %d
 					%s
 					`,
-		sql_where_all,
+		sqlWhereAll,
 		limit,
 		offset_str)
 	rows, err := db.Query(sql_str, sqlParams...)
+
+fmt.Println(">>> ", sql_str)
+
 	if err != nil {
 		return nil, err
 	}

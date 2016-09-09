@@ -54,7 +54,7 @@ func Init(router *httprouter.Router) bool {
 
 func initRouter(router *httprouter.Router) {
 	router.POST("/saasappapi/v1/apps", TimeoutHandle(500*time.Millisecond, CreateApp))
-	router.DELETE("/saasappapi/v1/apps/:id", TimeoutHandle(500*time.Millisecond, DeleteApp))
+	router.DELETE("/saasappapi/v1/apps/:id", TimeoutHandle(1500*time.Millisecond, DeleteApp))
 	router.PUT("/saasappapi/v1/apps/:id", TimeoutHandle(500*time.Millisecond, ModifyApp))
 	router.GET("/saasappapi/v1/apps/:id", TimeoutHandle(500*time.Millisecond, RetrieveApp))
 	router.GET("/saasappapi/v1/apps", TimeoutHandle(500*time.Millisecond, QueryAppList))
@@ -93,6 +93,10 @@ var (
 	dbMutex sync.Mutex
 )
 
+func DB() *sql.DB {
+	return dbInstance
+}
+
 func getDB() *sql.DB {
 	if market.IsServing() {
 		dbMutex.Lock()
@@ -110,11 +114,12 @@ func setDB(db *sql.DB) {
 }
 
 func initDB() bool {
-	return true // temp, mysqlnocase.servicebroker.dataos.io is not available now.
+	// return true // temp, mysqlnocase.servicebroker.dataos.io is not available now.
 
 	for i := 0; i < 3; i++ {
 		connectDB()
-		if getDB() == nil {
+		
+		if DB() == nil {
 			select {
 			case <-time.After(time.Second * 10):
 				continue
@@ -124,7 +129,7 @@ func initDB() bool {
 		}
 	}
 
-	if getDB() == nil {
+	if DB() == nil {
 		return false
 	}
 
@@ -170,7 +175,7 @@ func connectDB() {
 }
 
 func upgradeDB() {
-	err := market.TryToUpgradeDatabase(getDB(), "datafoundry:appmarket", os.Getenv("MYSQL_CONFIG_DONT_UPGRADE_TABLES") != "yes") // don't change the name
+	err := market.TryToUpgradeDatabase(DB(), "datafoundry:appmarket", os.Getenv("MYSQL_CONFIG_DONT_UPGRADE_TABLES") != "yes") // don't change the name
 	if err != nil {
 		Logger.Errorf("TryToUpgradeDatabase error: %s", err.Error())
 	}

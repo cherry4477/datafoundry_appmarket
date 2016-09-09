@@ -5,7 +5,9 @@ import (
 	"time"
 	"crypto/rand"
 	"fmt"
+	"strings"
 	mathrand "math/rand"
+	neturl "net/url"
 
 	"github.com/julienschmidt/httprouter"
 
@@ -38,30 +40,82 @@ func genUUID() string {
 //
 //==================================================================
 
-func validateAppID(appId string) *Error {
-	// GetError2(ErrorCodeInvalidParameters, err.Error())
-	_, e := _mustStringParam("appid", appId, 50, StringParamType_UnicodeUrlWord)
-	return e
-}
-
 func validateAppInfo(app *market.SaasApp) *Error {
+	var e *Error
 
-	/*
-	app.Provider
-	app.Url
-	app.Name
-	app.Version
-	app.Category
-	app.Description
-	app.Icon_url
-	*/
+	app.Name, e = validateAppName(app.Name, true)
+	if e != nil {
+		return e
+	}
+
+	app.Version, e = validateAppVersion(app.Version, true)
+	if e != nil {
+		return e
+	}
+
+	app.Provider, e = validateAppProvider(app.Provider, true)
+	if e != nil {
+		return e
+	}
+
+	app.Category, e = validateAppCategory(app.Category, true)
+	if e != nil {
+		return e
+	}
+
+	app.Description, e = validateAppDescription(app.Description, true)
+	if e != nil {
+		return e
+	}
+
+	app.Url, e = validateUrl(app.Url, true, "url")
+	if e != nil {
+		return e
+	}
+
+	app.Icon_url, e = validateUrl(app.Icon_url, true, "iconUrl")
+	if e != nil {
+		return e
+	}
 
 	return nil
 }
 
-func validateProvider(provider string) (string, *Error) {
-	if provider != "" {
-		provider_param, e := _mustStringParam("provider", provider, 50, StringParamType_UnicodeUrlWord)
+func validateAppID(appId string) *Error {
+	// GetError2(ErrorCodeInvalidParameters, err.Error())
+	_, e := _mustStringParam("appid", appId, 50, StringParamType_UrlWord)
+	return e
+}
+
+func validateAppName(name string, musBeNotBlank bool) (string, *Error) {
+	if musBeNotBlank || name != "" {
+		// most 20 Chinese chars
+		name_param, e := _mustStringParam("name", name, 60, StringParamType_General)
+		if e != nil {
+			return "", e
+		}
+		name = name_param
+	}
+
+	return name, nil
+}
+
+func validateAppVersion(version string, musBeNotBlank bool) (string, *Error) {
+	if musBeNotBlank || version != "" {
+		version_param, e := _mustStringParam("version", version, 32, StringParamType_General)
+		if e != nil {
+			return "", e
+		}
+		version = version_param
+	}
+
+	return version, nil
+}
+
+func validateAppProvider(provider string, musBeNotBlank bool) (string, *Error) {
+	if musBeNotBlank || provider != "" {
+		// most 20 Chinese chars
+		provider_param, e := _mustStringParam("provider", provider, 60, StringParamType_General)
 		if e != nil {
 			return "", e
 		}
@@ -71,9 +125,10 @@ func validateProvider(provider string) (string, *Error) {
 	return provider, nil
 }
 
-func validateCategory(category string) (string, *Error) {
-	if category != "" {
-		category_param, e := _mustStringParam("category", category, 25, StringParamType_UnicodeUrlWord)
+func validateAppCategory(category string, musBeNotBlank bool) (string, *Error) {
+	if musBeNotBlank || category != "" {
+		// most 10 Chinese chars
+		category_param, e := _mustStringParam("category", category, 32, StringParamType_General)
 		if e != nil {
 			return "", e
 		}
@@ -83,19 +138,86 @@ func validateCategory(category string) (string, *Error) {
 	return category, nil
 }
 
+func validateAppDescription(description string, musBeNotBlank bool) (string, *Error) {
+	if musBeNotBlank || description != "" {
+		// most about 666 Chinese chars
+		description_param, e := _mustStringParam("description", description, 2000, StringParamType_General)
+		if e != nil {
+			return "", e
+		}
+		description = description_param
+	}
+
+	return description, nil
+}
+
+func validateUrl(url string, musBeNotBlank bool, paramName string) (string, *Error) {
+	url = strings.TrimSpace(url)
+
+	if len(url) > 200 {
+		return "", newInvalidParameterError(fmt.Sprintf("%s is too long", paramName))
+	}
+
+	if url == "" {
+		if musBeNotBlank {
+			return "", newInvalidParameterError(fmt.Sprintf("%s can't be blank", paramName))
+		}
+
+		_, err := neturl.Parse(url)
+		if err != nil {
+			return "", newInvalidParameterError(err.Error())
+		}
+	}
+
+	return url, nil
+}
+
+// ...
+
+func validateAuth(token string) (string, *Error) {
+	if token == "" {
+		return "", GetError(ErrorCodeAuthFailed)
+	}
+
+	username, err := getDFUserame(token)
+	if err != nil {
+		return "", GetError2(ErrorCodeAuthFailed, err.Error())
+	}
+
+	return username, nil
+}
+
+func canEditSaasApps(username string) bool {
+	return username == "admin"
+}
+
 //==================================================================
 //
 //==================================================================
 
 func CreateApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	// todo: auth
-	
 	// ...
+
 	db := getDB()
 	if db == nil {
 		JsonResult(w, http.StatusInternalServerError, GetError(ErrorCodeDbNotInitlized), nil)
 		return
 	}
+
+	// auth
+
+	username, e := validateAuth(r.Header.Get("Authorization"))
+	if e != nil {
+		JsonResult(w, http.StatusUnauthorized, e, nil)
+		return
+	}
+
+	if !canEditSaasApps(username) {
+		JsonResult(w, http.StatusUnauthorized, GetError(ErrorCodePermissionDenied), nil)
+		return
+	}
+
+	// ...
 
 	app := &market.SaasApp{}
 	err := common.ParseRequestJsonInto(r, app)
@@ -104,7 +226,7 @@ func CreateApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 		return
 	}
 
-	e := validateAppInfo(app)
+	e = validateAppInfo(app)
 	if e != nil {
 		JsonResult(w, http.StatusBadRequest, e, nil)
 		return
@@ -125,18 +247,32 @@ func CreateApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 }
 
 func DeleteApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	// todo: auth
-	
 	// ...
+
 	db := getDB()
 	if db == nil {
 		JsonResult(w, http.StatusInternalServerError, GetError(ErrorCodeDbNotInitlized), nil)
 		return
 	}
 
-	appId := params.ByName("appid")
+	// auth
 
-	e := validateAppID(appId)
+	username, e := validateAuth(r.Header.Get("Authorization"))
+	if e != nil {
+		JsonResult(w, http.StatusUnauthorized, e, nil)
+		return
+	}
+
+	if !canEditSaasApps(username) {
+		JsonResult(w, http.StatusUnauthorized, GetError(ErrorCodePermissionDenied), nil)
+		return
+	}
+
+	// ...
+
+	appId := params.ByName("id")
+
+	e = validateAppID(appId)
 	if e != nil {
 		JsonResult(w, http.StatusBadRequest, e, nil)
 		return
@@ -152,18 +288,32 @@ func DeleteApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 }
 
 func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	// todo: auth
-	
 	// ...
+
 	db := getDB()
 	if db == nil {
 		JsonResult(w, http.StatusInternalServerError, GetError(ErrorCodeDbNotInitlized), nil)
 		return
 	}
 
-	appId := params.ByName("appid")
+	// auth
 
-	e := validateAppID(appId)
+	username, e := validateAuth(r.Header.Get("Authorization"))
+	if e != nil {
+		JsonResult(w, http.StatusUnauthorized, e, nil)
+		return
+	}
+
+	if !canEditSaasApps(username) {
+		JsonResult(w, http.StatusUnauthorized, GetError(ErrorCodePermissionDenied), nil)
+		return
+	}
+
+	// ...
+
+	appId := params.ByName("id")
+
+	e = validateAppID(appId)
 	if e != nil {
 		JsonResult(w, http.StatusBadRequest, e, nil)
 		return
@@ -193,19 +343,22 @@ func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 }
 
 func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	JsonResult(w, http.StatusOK, nil, appNewRelic)
-	return
-
+	//JsonResult(w, http.StatusOK, nil, appNewRelic)
+	//return
+	//
 	// todo: auth
 	
 	// ...
+
 	db := getDB()
 	if db == nil {
 		JsonResult(w, http.StatusInternalServerError, GetError(ErrorCodeDbNotInitlized), nil)
 		return
 	}
 
-	appId := params.ByName("appid")
+	// ...
+
+	appId := params.ByName("id")
 
 	e := validateAppID(appId)
 	if e != nil {
@@ -222,28 +375,18 @@ func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Param
 	JsonResult(w, http.StatusOK, nil, app)
 }
 
-/*
-category: app的类别。可选。如果忽略，表示所有类别。
-provider: 提供方。可选。如果忽略，表示所有提供方。
-orderby: 排序依据。可选。合法值包括hotness|createtime，默认为hotness。
-sortOrder: 排序方向。可选。合法值包括asc|desc，默认为desc。
-page: 第几页。可选。最小值为1。默认为1。
-size: 每页最多返回多少条数据。可选。最小为1，最大为100。默认为30。
-*/
-
 func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	apps := []*market.SaasApp{
-		&appNewRelic,
-	}
-
-	JsonResult(w, http.StatusOK, nil, newQueryListResult(int64(len(apps)), apps))
-	return
-
-
+	//apps := []*market.SaasApp{
+	//	&appNewRelic,
+	//}
+	//
+	//JsonResult(w, http.StatusOK, nil, newQueryListResult(int64(len(apps)), apps))
+	//return
 
 	// todo: auth
 	
 	// ...
+
 	db := getDB()
 	if db == nil {
 		JsonResult(w, http.StatusInternalServerError, GetError(ErrorCodeDbNotInitlized), nil)
@@ -252,13 +395,13 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 
 	r.ParseForm()
 
-	provider, e := validateProvider(r.Form.Get("provider"))
+	provider, e := validateAppProvider(r.Form.Get("provider"), false)
 	if e != nil {
 		JsonResult(w, http.StatusBadRequest, e, nil)
 		return
 	}
 
-	category, e := validateCategory(r.Form.Get("category"))
+	category, e := validateAppCategory(r.Form.Get("category"), false)
 	if e != nil {
 		JsonResult(w, http.StatusBadRequest, e, nil)
 		return
@@ -278,34 +421,10 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 }
 
 
-var appNewRelic = market.SaasApp{
-	App_id:      "98DED98A-F7A1-EDF2-3DF7-B799333D2FD2",
-	Provider:    "New Relic",
-	Url:         "https://dashboard.daocloud.io/orgs/asiainfo_dev/services/fec195f5-3440-4f13-94da-48d5008b6eb6",
-	Name:        "New Relic",
-	Version:     "",
-	Category:    "monitor",
-	Description: 	`
-New Relic是一款基于 SaaS 的云端应用监测与管理平台，可以监测和管理云端、网络端及移动端的应用，能让开发者以终端用户、服务器端或应用代码端的视角来监控自己的应用。 目前New Relic 提供的服务包括终端用户行为监控、应用监控、数据库监控、基础底层监控以及单个平台的监控，能为应用的健康提供实时的可预见性。例如，当出现大量用户无法登录帐号时，New Relic 提供的实时服务能让用户在投诉蜂拥而至之前找到问题的症结所在，进而让开发运营团队实时管理其应用的表现。
-`,
-	Icon_url:    "https://dn-dao-pr.qbox.me/website/icon/yEDRfH2o.jpeg",
-	Create_time: time.Now(),
 
-}
 
-/*
-var appNewSMS = market.SaasApp{
-	App_id:      "DC3E7112-4202-8593-771D-824197CE79D0",
-	Provider:    "AsiaInfo",
-	Url:         "http://124.207.3.112:18351/smsservice/send",
-	Name:        "SMS Gateway",
-	Version:     "",
-	Category:    "sms",
-	Description: 	`
-亚信短信网关
-`,
-	Icon_url:    "",
-	Create_time: time.Now(),
 
-}
-*/
+
+
+
+

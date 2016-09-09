@@ -89,7 +89,7 @@ func TryToUpgradeDatabase(db *sql.DB, dbName string, reallyNeedUpgrade bool) err
 	dbPhase = DbPhase_Serving
 	
 	log.DefaultLogger().Info("mysql start serving ...")
-	
+
 	return nil
 }
 
