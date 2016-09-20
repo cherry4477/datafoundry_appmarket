@@ -30,7 +30,16 @@ func genUUID() string {
 	if err != nil {
 		Logger.Warning("genUUID error: ", err.Error())
 
-		mathrand.Read(bs)
+		//mathrand.Read(bs)
+		n := time.Now().UnixNano()
+		for i := uint(0); i < 8; i ++ {
+			bs[i] = byte((n >> i) & 0xff)
+		}
+
+		n = mathrand.Int63()
+		for i := uint(0); i < 8; i ++ {
+			bs[i+8] = byte((n >> i) & 0xff)
+		}
 	}
 
 	return fmt.Sprintf("%X-%X-%X-%X-%X", bs[0:4], bs[4:6], bs[6:8], bs[8:10], bs[10:])
@@ -83,7 +92,7 @@ func validateAppInfo(app *market.SaasApp) *Error {
 
 func validateAppID(appId string) *Error {
 	// GetError2(ErrorCodeInvalidParameters, err.Error())
-	_, e := _mustStringParam("appid", appId, 50, StringParamType_UrlWord)
+	_, e := _mustStringParam("id", appId, 50, StringParamType_UrlWord)
 	return e
 }
 

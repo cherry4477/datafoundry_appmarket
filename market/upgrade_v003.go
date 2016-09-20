@@ -36,18 +36,26 @@ func (upgrader DatabaseUpgrader_2) Upgrade (db *sql.DB) error {
 	
 	log.DefaultLogger().Info("DatabaseUpgrader_2 alter tables ... ") 
 	
-	_ = CreateApp(db, &appNewRelic)
-	//if err != nil {
-	//	return err
-	//}
+	err := CreateApp(db, &appNewRelic)
+	if err != nil {
+		log.DefaultLogger().Warningf("DatabaseUpgrader_2 CreateApp err: %s", err.Error())
+	}
 
-	_, _ = db.Exec("drop table DF_SAAS_APP")
-	_, _ = db.Exec("drop table DF_SAAS_APP_INSTANCE")
+	_, err = db.Exec("drop table DF_SAAS_APP")
+	if err != nil {
+		log.DefaultLogger().Warningf("DatabaseUpgrader_2 drop DF_SAAS_APP err: %s", err.Error())
+	}
+
+	_, err = db.Exec("drop table DF_SAAS_APP_INSTANCE")
+	if err != nil {
+		log.DefaultLogger().Warningf("DatabaseUpgrader_2 drop DF_SAAS_APP_INSTANCE err: %s", err.Error())
+	}
 	
 	log.DefaultLogger().Info("DatabaseUpgrader_2, alter tables done. ")
 
 	return nil
 }
+
 
 
 var appNewRelic = SaasApp{

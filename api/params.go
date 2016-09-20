@@ -53,11 +53,11 @@ func Init(router *httprouter.Router) bool {
 }
 
 func initRouter(router *httprouter.Router) {
-	router.POST("/saasappapi/v1/apps", TimeoutHandle(500*time.Millisecond, CreateApp))
-	router.DELETE("/saasappapi/v1/apps/:id", TimeoutHandle(1500*time.Millisecond, DeleteApp))
-	router.PUT("/saasappapi/v1/apps/:id", TimeoutHandle(500*time.Millisecond, ModifyApp))
-	router.GET("/saasappapi/v1/apps/:id", TimeoutHandle(500*time.Millisecond, RetrieveApp))
-	router.GET("/saasappapi/v1/apps", TimeoutHandle(500*time.Millisecond, QueryAppList))
+	router.POST("/saas/v1/apps", TimeoutHandle(500*time.Millisecond, CreateApp))
+	router.DELETE("/saas/v1/apps/:id", TimeoutHandle(1500*time.Millisecond, DeleteApp))
+	router.PUT("/saas/v1/apps/:id", TimeoutHandle(500*time.Millisecond, ModifyApp))
+	router.GET("/saas/v1/apps/:id", TimeoutHandle(500*time.Millisecond, RetrieveApp))
+	router.GET("/saas/v1/apps", TimeoutHandle(500*time.Millisecond, QueryAppList))
 }
 
 //=============================
