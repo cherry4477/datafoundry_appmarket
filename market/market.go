@@ -211,17 +211,6 @@ func ValidateSortOrder(sortOrder string, defaultOrder bool) bool {
 	return defaultOrder
 }
 
-func ValidateOrderBy(orderBy string) string {
-	switch orderBy {
-	case "createtime":
-		return "CREATE_TIME";
-	case "hotness":
-		return "HOTNESS";
-	}
-
-	return ""
-}
-
 func getAppList(db *sql.DB, offset int64, limit int, sqlWhere string, sqlSort string, sqlParams ...interface{}) (int64, []*SaasApp, error) {
 	//if strings.TrimSpace(sqlWhere) == "" {
 	//	return 0, nil, errors.New("sqlWhere can't be blank")
@@ -276,8 +265,6 @@ func queryApps(db *sql.DB, sqlWhereAll string, limit int, offset int64, sqlParam
 		limit,
 		offset_str)
 	rows, err := db.Query(sql_str, sqlParams...)
-
-fmt.Println(">>> ", sql_str)
 
 	if err != nil {
 		return nil, err

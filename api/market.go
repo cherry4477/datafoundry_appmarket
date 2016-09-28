@@ -417,7 +417,8 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 	}
 	
 	offset, size := optionalOffsetAndSize(r, 30, 1, 100)
-	orderBy := market.ValidateOrderBy(r.Form.Get("orderby"))
+	//orderBy := market.ValidateOrderBy(r.Form.Get("orderby"))
+	orderBy := r.Form.Get("orderby")
 	sortOrder := market.ValidateSortOrder(r.Form.Get("sortorder"), false)
 
 	count, apps, err := market.QueryApps(db, provider, category, orderBy, sortOrder, offset, size)

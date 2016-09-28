@@ -65,7 +65,7 @@ Path Parameters:
 id: 应用id
 ```
 
-Body Parameters:
+Body Parameters (json):
 ```
 provider: 提供方
 url: 应用地址
