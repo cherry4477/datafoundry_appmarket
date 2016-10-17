@@ -21,23 +21,23 @@ const (
 	
 	ErrorCodeNone = 0
 
-	ErrorCodeUnkown                = 1300
-	ErrorCodeJsonBuilding          = 1301
-	ErrorCodeParseJsonFailed       = 1302
-	ErrorCodeUrlNotSupported       = 1303
-	ErrorCodeDbNotInitlized        = 1304
-	ErrorCodeAuthFailed            = 1305
-	ErrorCodePermissionDenied      = 1306
-	ErrorCodeInvalidParameters     = 1307
-	ErrorCodeCreateApp             = 1308
-	ErrorCodeDeleteApp             = 1309
-	ErrorCodeModifyApp             = 1310
-	ErrorCodeGetApp                = 1311
-	ErrorCodeQueryApps             = 1312
+	ErrorCodeUnkown                = 2300
+	ErrorCodeJsonBuilding          = 2301
+	ErrorCodeParseJsonFailed       = 2302
+	ErrorCodeUrlNotSupported       = 2303
+	ErrorCodeDbNotInitlized        = 2304
+	ErrorCodeAuthFailed            = 2305
+	ErrorCodePermissionDenied      = 2306
+	ErrorCodeInvalidParameters     = 2307
+	ErrorCodeCreateApp             = 2308
+	ErrorCodeDeleteApp             = 2309
+	ErrorCodeModifyApp             = 2310
+	ErrorCodeGetApp                = 2311
+	ErrorCodeQueryApps             = 2312
 
 
 
-	NumErrors = 1500 // about 12k memroy wasted
+	NumErrors = 2500 // about 20k memroy wasted
 )
 
 func init() {

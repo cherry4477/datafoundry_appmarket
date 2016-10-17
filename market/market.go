@@ -283,7 +283,6 @@ func queryApps(db *sql.DB, sqlWhereAll string, limit int, offset int64, sqlParam
 		if err != nil {
 			return nil, err
 		}
-		//validateApp(s) // already done in scanAppWithRows
 		apps = append(apps, app)
 	}
 	if err := rows.Err(); err != nil {

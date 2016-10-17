@@ -90,10 +90,10 @@ func validateAppInfo(app *market.SaasApp) *Error {
 	return nil
 }
 
-func validateAppID(appId string) *Error {
+func validateAppID(appId string) (string, *Error) {
 	// GetError2(ErrorCodeInvalidParameters, err.Error())
-	_, e := _mustStringParam("id", appId, 50, StringParamType_UrlWord)
-	return e
+	appId, e := _mustStringParam("id", appId, 50, StringParamType_UrlWord)
+	return appId, e
 }
 
 func validateAppName(name string, musBeNotBlank bool) (string, *Error) {
@@ -278,10 +278,8 @@ func DeleteApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	}
 
 	// ...
-
-	appId := params.ByName("id")
-
-	e = validateAppID(appId)
+	
+	appId, e := validateAppID(params.ByName("id"))
 	if e != nil {
 		JsonResult(w, http.StatusBadRequest, e, nil)
 		return
@@ -319,10 +317,8 @@ func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	}
 
 	// ...
-
-	appId := params.ByName("id")
-
-	e = validateAppID(appId)
+	
+	appId, e := validateAppID(params.ByName("id"))
 	if e != nil {
 		JsonResult(w, http.StatusBadRequest, e, nil)
 		return
@@ -341,6 +337,7 @@ func ModifyApp(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 		return
 	}
 
+	app.App_id = appId
 	err = market.ModifyApp(db, app)
 	if err != nil {
 		JsonResult(w, http.StatusBadRequest, GetError2(ErrorCodeModifyApp, err.Error()), nil)
@@ -366,10 +363,8 @@ func RetrieveApp(w http.ResponseWriter, r *http.Request, params httprouter.Param
 	}
 
 	// ...
-
-	appId := params.ByName("id")
-
-	e := validateAppID(appId)
+	
+	appId, e := validateAppID(params.ByName("id"))
 	if e != nil {
 		JsonResult(w, http.StatusBadRequest, e, nil)
 		return
@@ -402,7 +397,7 @@ func QueryAppList(w http.ResponseWriter, r *http.Request, params httprouter.Para
 		return
 	}
 
-	r.ParseForm()
+	r.ParseForm() // this line is not needed if followings r.Form.Get are replaced with r.FormValue
 
 	provider, e := validateAppProvider(r.Form.Get("provider"), false)
 	if e != nil {

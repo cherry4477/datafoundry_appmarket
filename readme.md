@@ -105,7 +105,7 @@ data.iconUrl
 data.createTime
 ```
 
-### GET /saas/v1/apps?category={category}&orderby={orderby}&provider={provider}
+### GET /saas/v1/apps?category={category}&provider={provider}&orderby={orderby}
 
 查询SaaS App列表。
 
